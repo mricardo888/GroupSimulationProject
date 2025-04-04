@@ -12,8 +12,8 @@ public abstract class Buttons extends Actor
      * Act - do whatever the Buttons wants to do. This method is called whenever
      * the 'Act' or 'Run' button gets pressed in the environment.
      */
-    private GreenfootImage image;
-    private World world;
+    protected GreenfootImage image;
+    protected World world;
     
     public Buttons(GreenfootImage e, World w){
         this.image = e;

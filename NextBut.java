@@ -8,13 +8,9 @@ import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
  */
 public class NextBut extends Buttons
 {
-    private GreenfootImage image;
-    private World world;
-    
     public NextBut(GreenfootImage e, World w){
         super(e,w);
-        this.image = e;
-        this.world = w;
+        
     }
     
     public  void changeWorld(){
