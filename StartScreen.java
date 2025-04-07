@@ -28,13 +28,13 @@ public class StartScreen extends World
         GreenfootImage settin = new GreenfootImage("setting.png");
         settin.scale((int)(settin.getWidth() * 0.8), (int)(settin.getHeight() * 0.8));
         NextBut settinScreen = new NextBut(settin,s);
-        addObject(settinScreen,getWidth()/2,400);
+        addObject(settinScreen,getWidth()/2,600);
         
         // Button to Setting Screen
         GreenfootImage play = new GreenfootImage("play.png");
         play.scale((int)(play.getWidth() * 0.8), (int)(play.getHeight() * 0.8));
         NextBut playWorld = new NextBut(play,m);
-        addObject(playWorld,getWidth()/2,300);
+        addObject(playWorld,getWidth()/2,500);
         
         
     }
