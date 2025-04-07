@@ -6,7 +6,7 @@ import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
  * @author (your name) 
  * @version (a version number or a date)
  */
-public abstract class Buttons extends Actor
+public abstract class ChangeWorldButtons extends Actor
 {
     /**
      * Act - do whatever the Buttons wants to do. This method is called whenever
@@ -15,7 +15,7 @@ public abstract class Buttons extends Actor
     protected GreenfootImage image;
     protected World world;
     
-    public Buttons(GreenfootImage e, World w){
+    public ChangeWorldButtons(GreenfootImage e, World w){
         this.image = e;
         this.world = w;
         setImage(image);

@@ -6,7 +6,7 @@ import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
  * @author (your name) 
  * @version (a version number or a date)
  */
-public class NextBut extends Buttons
+public class NextBut extends ChangeWorldButtons
 {
     public NextBut(GreenfootImage e, World w){
         super(e,w);
@@ -20,7 +20,6 @@ public class NextBut extends Buttons
     
     public void checkClick(){
         if (Greenfoot.mouseClicked(this)){
-            System.out.println(1);
             changeWorld();
         }
     }

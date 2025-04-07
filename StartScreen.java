@@ -21,12 +21,21 @@ public class StartScreen extends World
         
         //World Instances
         Settings s = new Settings();
+        MyWorld m = new MyWorld();
         
         
         // Button to Setting Screen
-        GreenfootImage sbI = new GreenfootImage("Start1.png");
-        NextBut sb = new NextBut(sbI,s);
-        addObject(sb,100,100);
+        GreenfootImage settin = new GreenfootImage("setting.png");
+        settin.scale((int)(settin.getWidth() * 0.8), (int)(settin.getHeight() * 0.8));
+        NextBut settinScreen = new NextBut(settin,s);
+        addObject(settinScreen,getWidth()/2,400);
+        
+        // Button to Setting Screen
+        GreenfootImage play = new GreenfootImage("play.png");
+        play.scale((int)(play.getWidth() * 0.8), (int)(play.getHeight() * 0.8));
+        NextBut playWorld = new NextBut(play,m);
+        addObject(playWorld,getWidth()/2,300);
+        
         
     }
     

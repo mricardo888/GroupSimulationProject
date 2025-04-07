@@ -11,9 +11,10 @@ public class Settings extends World
         super(1024, 800,1);
         
         //Button Back to StartScreen
-        GreenfootImage sbI = new GreenfootImage("Start1.png");
-        BackButton backButton = new BackButton(sbI);
-        addObject(backButton, 200, 200);
+        GreenfootImage back = new GreenfootImage("back.png");
+        back.scale((int)(back.getWidth() * 0.8), (int)(back.getHeight() * 0.8));
+        BackButton backButton = new BackButton(back);
+        addObject(backButton, getWidth()/2, 400);
     }
     
     public void act(){

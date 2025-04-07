@@ -1,6 +1,6 @@
 import greenfoot.*;  
 
-public class BackButton extends Buttons 
+public class BackButton extends ChangeWorldButtons 
 {
     
     public BackButton(GreenfootImage e){
