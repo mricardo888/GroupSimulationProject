@@ -7,12 +7,15 @@ import java.util.ArrayList;
  * @author (your name) 
  * @version (a version number or a date)
  */
-public abstract class Character extends Actor
+public abstract class Character extends SuperSmoothMover
 {
     protected int age; // Stone Age = 1, Modern Age = 2, Space Age = 3
     protected int hp;
     protected int direction; // -1 left to right, 1 right to left
     protected boolean moving;
+    protected boolean attacking;
+    protected Animator walkAnimation;
+    protected Animator attackAnimation;
     
     public abstract void attack();
     
@@ -25,8 +28,8 @@ public abstract class Character extends Actor
     
     public void act()
     {
-        if (moving) {
-            
+        if (hp <= 0) {
+            getWorld().removeObject(this);
         }
     }
     
