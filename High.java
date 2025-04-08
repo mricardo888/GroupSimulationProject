@@ -1,14 +1,14 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * Write a description of class Range here.
+ * Write a description of class Rank here.
  * 
  * @author (your name) 
  * @version (a version number or a date)
  */
-public class Range extends Character
+public class High extends Character
 {
-    public Range(int age, int hp, int direction) {
+    public High(int age, int hp, int direction) {
         super(age, hp, direction);
     }
     
