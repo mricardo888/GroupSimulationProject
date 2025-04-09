@@ -35,6 +35,15 @@ public class Animator
     }
     
     /**
+     * Flip images in the library horizontally
+     */
+    public void flip() {
+        for (GreenfootImage a : animation) {
+            a.mirrorHorizontally();
+        }
+    }
+    
+    /**
      * Set animation speed
      */
     public void setSpeed(int s) {
