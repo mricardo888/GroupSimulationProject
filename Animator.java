@@ -85,6 +85,13 @@ public class Animator
     }
     
     /**
+     * Get Images ArrayList
+     */
+    public ArrayList<GreenfootImage> getImages() {
+        return animation;
+    }
+    
+    /**
      * Get size of the animator files
      */
     public int getSize() {
