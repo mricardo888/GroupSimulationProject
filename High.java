@@ -1,15 +1,18 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * Write a description of class High here.
- * 
- * @author (your name) 
- * @version (a version number or a date)
+ * High tier unit.
  */
 public class High extends Unit
 {
+    private static final int COST = 130;
+    
     public High(int age, int hp, int direction) {
         super(age, hp, direction, "high");
+        
+        // Set specific attributes for High unit
+        setAttackDamage(15);
+        changeSpeed(0.7);
     }
     
     public void act()
@@ -17,7 +20,21 @@ public class High extends Unit
         super.act();
     }
     
-    public void attack() {
-        
+    @Override
+    public int getCost() {
+        return COST;
     }
+    
+    @Override
+    public int getGoldReward() {
+        return HIGH_REWARD;
+    }
+    
+    @Override
+    public int getXPReward() {
+        return HIGH_XP_REWARD;
+    }
+    
+    public static final int HIGH_REWARD = 65;
+    public static final int HIGH_XP_REWARD = 50;
 }
