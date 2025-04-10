@@ -110,10 +110,10 @@ public class Settings extends World
         x2.setValue(xp2);
     }
     //Getters && setters
-    public int getGold1(){
+    public static int getGold1(){
         return gold1;
     }
-    public int getGold2(){
+    public static int getGold2(){
         return gold2;
     }
     public void setGold1(int num){
@@ -122,10 +122,10 @@ public class Settings extends World
     public void setGold2(int num){
         gold2 = num;
     }
-    public int getXp1(){
+    public static int getXp1(){
         return xp1;
     }
-    public int getXp2(){
+    public static int getXp2(){
         return xp2;
     }
     public void setXp1(int num){

@@ -1,27 +1,40 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * Write a description of class Mid here.
- * 
- * @author (your name) 
- * @version (a version number or a date)
+ * Mid tier unit.
  */
 public class Mid extends Unit
 {
-    /**
-     * Act - do whatever the Melee wants to do. This method is called whenever
-     * the 'Act' or 'Run' button gets pressed in the environment.
-     */
-    public Mid(int age, int direction, int hp) {
-        super(age, direction, hp, "mid");
+    private static final int COST = 70;
+    
+    public Mid(int age, int hp, int direction) {
+        super(age, hp, direction, "mid");
+        
+        // Set specific attributes for Mid unit
+        setAttackDamage(10);
+        changeSpeed(1.0);
     }
     
     public void act()
     {
-        // Add your action code here.
+        super.act();
     }
     
-    public void attack() {
-        
+    @Override
+    public int getCost() {
+        return COST;
     }
+    
+    @Override
+    public int getGoldReward() {
+        return MID_REWARD;
+    }
+    
+    @Override
+    public int getXPReward() {
+        return MID_XP_REWARD;
+    }
+    
+    public static final int MID_REWARD = 35;
+    public static final int MID_XP_REWARD = 25;
 }

@@ -3,10 +3,7 @@ import java.util.ArrayList;
 import java.io.File;
 
 /**
- * Write a description of class Character here.
- * 
- * @author (your name) 
- * @version (a version number or a date)
+ * The base class for all units in the game.
  */
 public abstract class Unit extends SuperSmoothMover
 {
@@ -14,6 +11,7 @@ public abstract class Unit extends SuperSmoothMover
     protected int age; // Stone Age = 1, Cave Age = 2, 
     // Modern Age = 3, Space Age = 4
     protected int hp;
+    protected int maxHP; // Store the maximum HP for the HP bar
     protected int direction; // 1 left to right, -1 right to left
     protected boolean moving;
     protected boolean attacking;
@@ -21,14 +19,18 @@ public abstract class Unit extends SuperSmoothMover
     protected Animator attackAnimation;
     protected Animator deathAnimation;
     protected double speed = 1; // Default speed is one
-    
-    public abstract void attack();
+    protected int attackDamage = 10; // Default attack damage
+    protected int attackCooldown = 0; // Cooldown between attacks
+    protected int attackRange = 50; // Default attack range
+    protected HPBar hpBar; // Reference to the HP bar
     
     public Unit(int age, int hp, int direction, String type) {
         this.age = age;
         this.hp = hp;
+        this.maxHP = hp; // Set the maximum HP
         this.direction = direction;
-        moving = false;
+        moving = true;
+        attacking = false;
         String basePath = "images/age" + age + "/" + type + "/";
         walkAnimation = new Animator(basePath + "walk");
         attackAnimation = new Animator(basePath + "attack");
@@ -38,6 +40,8 @@ public abstract class Unit extends SuperSmoothMover
         } else {
             deathAnimation = null;
         }
+        
+        // Only flip the animations if direction is right to left (-1)
         if (direction == -1) {
             walkAnimation.flip();
             attackAnimation.flip();
@@ -45,6 +49,12 @@ public abstract class Unit extends SuperSmoothMover
                 deathAnimation.flip();
             }
         }
+    }
+    
+    public void addedToWorld(World world) {
+        // Create and add HP bar when the unit is added to the world
+        hpBar = new HPBar(this, maxHP);
+        world.addObject(hpBar, getX(), getY() - 30);
     }
     
     public void changeSpeed(double s) {
@@ -57,19 +67,84 @@ public abstract class Unit extends SuperSmoothMover
             moving = false;
             if (deathAnimation != null) {
                 death();
+            } else {
+                // If no death animation, still award gold and XP
+                awardRewards();
+                // Then remove the unit
+                getWorld().removeObject(this);
+            }
+            return;
+        }
+        
+        // Look for enemies to attack
+        if (!attacking) {
+            Unit enemy = enemyInRange(attackRange);
+            if (enemy != null) {
+                attacking = true;
+                moving = false;
             }
         }
-        if (moving) {
+        
+        if (attacking) {
+            performAttack();
+        } else if (moving) {
             setImage(walkAnimation.getCurrentFrame());
             setLocation(getX() + speed * direction, getY());
+        }
+        
+        // Reduce attack cooldown if it's active
+        if (attackCooldown > 0) {
+            attackCooldown--;
+        }
+    }
+    
+    private void performAttack() {
+        // Get the current attack frame without flipping it again
+        setImage(attackAnimation.getCurrentFrame());
+        
+        // If attack animation finished one cycle and cooldown is 0
+        if (attackAnimation.getImageIndex() == attackAnimation.getSize() - 1 && attackCooldown == 0) {
+            // Deal damage to nearby enemies
+            Unit enemy = enemyInRange(attackRange);
+            if (enemy != null) {
+                enemy.attack(attackDamage);
+                attackCooldown = 50; // Set cooldown before next attack
+            } else {
+                // No enemy found, resume moving
+                attacking = false;
+                moving = true;
+            }
         }
     }
     
     private void death() {
         setImage(deathAnimation.getCurrentFrame());
         if (deathAnimation.getImageIndex() + 1 == deathAnimation.getSize()) {
+            // Award gold and XP to the opponent when a unit dies
+            awardRewards();
             getWorld().removeObject(this);
         }
+    }
+    
+    /**
+     * Award gold and XP rewards to the opponent
+     */
+    private void awardRewards() {
+        if (getWorld() instanceof MyWorld) {
+            MyWorld world = (MyWorld) getWorld();
+            // Award gold and XP to the opposite side
+            if (getSide() == 1) { // If side 1 unit died, award to side 2
+                world.addGold(2, getGoldReward());
+                world.addXP(2, getXPReward());
+            } else { // If side 2 unit died, award to side 1
+                world.addGold(1, getGoldReward());
+                world.addXP(1, getXPReward());
+            }
+        }
+    }
+    
+    public void attack(int damage) {
+        hp -= damage;
     }
     
     public int getSide() {
@@ -82,6 +157,36 @@ public abstract class Unit extends SuperSmoothMover
     
     public Unit enemyInRange(int r) {
         ArrayList<Unit> enemies = (ArrayList<Unit>) getObjectsInRange(r, Unit.class);
-        return enemies.get(0);
+        for (Unit u : enemies) {
+            if (u.getSide() != getSide()) {
+                return u;
+            }
+        }
+        return null;
+    }
+    
+    // Getter for HP for the HP bar
+    public int getHP() {
+        return hp;
+    }
+    
+    // Setter for attack damage
+    public void setAttackDamage(int damage) {
+        this.attackDamage = damage;
+    }
+    
+    // Getter for the unit cost
+    public abstract int getCost();
+    
+    // Get the gold reward for defeating this unit
+    public int getGoldReward() {
+        // By default, return half the unit's cost as gold reward
+        return getCost() / 2;
+    }
+    
+    // Get the XP reward for defeating this unit
+    public int getXPReward() {
+        // Default XP reward, will be overridden by subclasses
+        return 10;
     }
 }

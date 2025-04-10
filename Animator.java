@@ -12,10 +12,12 @@ public class Animator
      * the 'Act' or 'Run' button gets pressed in the environment.
      */
     private ArrayList<GreenfootImage> animation;
+    private ArrayList<GreenfootImage> originalImages; // Store original unflipped images
     private int animationSpeed;
     private SimpleTimer animationTimer;
     private int imageIndex;
     private boolean pause;
+    private boolean isFlipped;
     
     public Animator(String directoryPath) {
         // Get all files in the directory
@@ -23,8 +25,12 @@ public class Animator
         File[] files = directory.listFiles();
         // Add them to the ArrayList
         animation = new ArrayList<GreenfootImage>();
+        originalImages = new ArrayList<GreenfootImage>();
         for (File file : files) {
-            animation.add(new GreenfootImage(directoryPath + "/" + file.getName()));
+            GreenfootImage img = new GreenfootImage(directoryPath + "/" + file.getName());
+            animation.add(img);
+            // Store a copy of the original image
+            originalImages.add(new GreenfootImage(img));
         }
         // Init Timer for Animation
         animationTimer = new SimpleTimer();
@@ -32,15 +38,34 @@ public class Animator
         imageIndex = 0;
         animationSpeed = 100; // Default speed
         pause = false;
+        isFlipped = false;
     }
     
     /**
      * Flip images in the library horizontally
      */
     public void flip() {
+        isFlipped = !isFlipped;
         for (GreenfootImage a : animation) {
             a.mirrorHorizontally();
         }
+    }
+    
+    /**
+     * Check if the animator is flipped
+     */
+    public boolean isFlipped() {
+        return isFlipped;
+    }
+    
+    /**
+     * Reset all images to their original unflipped state
+     */
+    public void resetToOriginal() {
+        for (int i = 0; i < animation.size(); i++) {
+            animation.set(i, new GreenfootImage(originalImages.get(i)));
+        }
+        isFlipped = false;
     }
     
     /**
