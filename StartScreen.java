@@ -9,10 +9,6 @@ import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 public class StartScreen extends World
 {
 
-    /**
-     * Constructor for objects of class StartScreen.
-     * 
-     */
     
     public StartScreen()
     {    
@@ -35,6 +31,12 @@ public class StartScreen extends World
         play.scale((int)(play.getWidth() * 0.8), (int)(play.getHeight() * 0.8));
         NextBut playWorld = new NextBut(play,m);
         addObject(playWorld,getWidth()/2,500);
+        
+        //Bg
+        GreenfootImage bg = new GreenfootImage("startingbg.png");
+        bg.scale(1024,800);
+        setBackground(bg);
+
         
         
     }
