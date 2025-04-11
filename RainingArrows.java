@@ -277,8 +277,6 @@ public class RainingArrows extends SpecialSkill
             img.setColor(new Color(200, 200, 200, 200));
             img.fillOval(0, 0, 20, 20);
             setImage(img);
-            
-            Greenfoot.playSound("/sounds/ArrowWhoosh.wav");
         }
         
         public boolean update() {

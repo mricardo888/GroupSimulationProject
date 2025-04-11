@@ -52,6 +52,15 @@ public class Animator
     }
     
     /**
+     * Scale images
+     */
+    public void scale(int x, int y) {
+        for (GreenfootImage a : animation) {
+            a.scale(x, y);
+        }
+    }
+    
+    /**
      * Check if the animator is flipped
      */
     public boolean isFlipped() {

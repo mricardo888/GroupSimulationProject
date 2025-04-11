@@ -118,7 +118,7 @@ public class Meteor extends SpecialSkill
         meteors.add(meteor);
         world.addObject(meteor, meteor.getX(), meteor.getY());
         
-        Greenfoot.playSound("/sounds/CometFalling.mp3");
+        Greenfoot.playSound("./sounds/CometFalling.mp3");
     }
     
     /**
@@ -278,7 +278,7 @@ public class Meteor extends SpecialSkill
             // Scale the impact animation based on meteor size
             int impactScale = size / 20 + 1; // Base impact size on meteor size
             
-            Greenfoot.playSound("/sounds/explosion.mp3");
+            Greenfoot.playSound("sounds/explosion.mp3");
         }
         
         public boolean update() {

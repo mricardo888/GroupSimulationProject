@@ -25,6 +25,7 @@ public class PlaneBomb extends SpecialSkill
      */
     public PlaneBomb() {
         animator = new Animator("images/plane");
+        animator.scale(150, 150);
         animator.setSpeed(100);
     }
     
@@ -143,8 +144,10 @@ public class PlaneBomb extends SpecialSkill
         public Bomb(int x, int y) {
             this.x = x;
             this.y = y;
-            setImage("images/bomb.png");
-            Greenfoot.playSound("/sounds/bombsFalling.mp3");
+            GreenfootImage g = new GreenfootImage("images/bomb.png");
+            g.scale(100, 100);
+            setImage(g);
+            Greenfoot.playSound("sounds/bombsFalling.mp3");
         }
         
         public void update() {

@@ -142,9 +142,9 @@ public class MyWorld extends World
      */
     public void addXP(int side, int amount) {
         if (side == 1) {
-            xp1 += amount;
-        } else {
             xp2 += amount;
+        } else {
+            xp1 += amount;
         }
     }
     

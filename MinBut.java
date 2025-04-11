@@ -28,22 +28,22 @@ public class MinBut extends Buttons
     public void minGold1(){
         Settings s = (Settings)getWorld();
         g1 = s.getGold1();
-        s.setGold1(g1 - 1);
+        s.setGold1(g1 - 10);
     }
     public void minGold2(){
         Settings s = (Settings)getWorld();
         g2 = s.getGold2();
-        s.setGold2(g2 - 1);
+        s.setGold2(g2 - 10);
     }
     public void minXp1(){
         Settings s = (Settings)getWorld();
         xp1 = s.getXp1();
-        s.setXp1(xp1 - 1);
+        s.setXp1(xp1 - 10);
     }
     public void minXp2(){
         Settings s = (Settings)getWorld();
         xp2 = s.getXp2();
-        s.setXp2(xp2 - 1);
+        s.setXp2(xp2 - 10);
     }
     
     public void which(){
