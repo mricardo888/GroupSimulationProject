@@ -178,7 +178,7 @@ public class MyWorld extends World
         if (side == 1) {
             age = Math.min(age + 1, 4); // Side 1's age (capped at 4)
             ageLabel1.setValue("Age: " + getAgeDescription(1));
-            Greenfoot.playSound("level-up.wav"); // Optional: play a sound effect
+            //Greenfoot.playSound("level-up.wav"); // Optional: play a sound effect
         } else {
             // For side 2, we track it separately (we could add a player2Age variable)
             // For now we'll just increment the label
@@ -271,9 +271,9 @@ public class MyWorld extends World
     private void spawnUnitBySide(int side, int unitType) {
         int direction = (side == 1) ? -1 : 1;
         Unit unit = null;
-        int hp = 100; // Default HP
         int cost = 0;
         int playerAge = getPlayerAge(side);
+        int hp = 100 * playerAge; // Default HP
         
         switch (unitType) {
             case 3: // High
