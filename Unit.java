@@ -147,6 +147,37 @@ public abstract class Unit extends SuperSmoothMover
         hp -= damage;
     }
     
+    /**
+     * Called when a unit is hit by a special skill
+     * 
+     * @param damage The amount of damage to inflict
+     * @param side The side that activated the skill (1 or 2)
+     */
+    public void hitBySpecialSkill(int damage, int side) {
+        // Only take damage if the skill was activated by the opposing side
+        if (getSide() != side) {
+            // Apply damage
+            hp -= damage;
+            
+            // If killed by special skill, still award rewards
+            if (hp <= 0) {
+                // The unit will be removed in the next act cycle
+                // But we need to award rewards immediately
+                awardRewards();
+            }
+        }
+    }
+    
+    /**
+     * Check if this unit is in the specified rectangular area
+     */
+    public boolean isInArea(int x1, int y1, int x2, int y2) {
+        int unitX = getX();
+        int unitY = getY();
+        
+        return unitX >= x1 && unitX <= x2 && unitY >= y1 && unitY <= y2;
+    }
+    
     public int getSide() {
         if (direction == -1) {
             return 1;

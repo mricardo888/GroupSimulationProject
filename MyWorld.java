@@ -15,6 +15,12 @@ public class MyWorld extends World
     private static final int MID_COST = 70;
     private static final int HIGH_COST = 130;
     
+    // Special skill costs
+    private static final int METEOR_COST = 200;
+    private static final int RAINING_ARROWS_COST = 300;
+    private static final int PLANE_BOMB_COST = 400;
+    private static final int LASER_BEAM_COST = 500;
+    
     // XP rewards for defeating units
     private static final int LOW_XP_REWARD = 10;
     private static final int MID_XP_REWARD = 25;
@@ -32,6 +38,17 @@ public class MyWorld extends World
     private int spawnTimer1 = 0;
     private int spawnTimer2 = 0;
     private int spawnDelay = 100; // Delay between spawns
+    
+    // Special skill references
+    private Meteor meteor;
+    private RainingArrows rainingArrows;
+    private PlaneBomb planeBomb;
+    private LaserBeam laserBeam;
+    
+    // Skill timers
+    private int skillTimer1 = 0;
+    private int skillTimer2 = 0;
+    private int skillDelay = 500; // Longer delay than unit spawning
     
     // Display labels
     private Label goldLabel1;
@@ -76,8 +93,28 @@ public class MyWorld extends World
         addObject(ageLabel1, 100, 100);
         addObject(ageLabel2, getWidth() - 100, 100);
         
+        // Setup special skills
+        setupSpecialSkills();
+        
         // Initial spawn
         spawnInitialUnits();
+    }
+    
+    /**
+     * Initialize and setup the special skills
+     */
+    private void setupSpecialSkills() {
+        // Create special skills
+        meteor = new Meteor();
+        rainingArrows = new RainingArrows();
+        planeBomb = new PlaneBomb();
+        laserBeam = new LaserBeam();
+        
+        // Add special skills to the world (initially invisible)
+        addObject(meteor, 0, 0);
+        addObject(rainingArrows, 0, 0);
+        addObject(planeBomb, 0, 0);
+        addObject(laserBeam, 0, 0);
     }
     
     /**
@@ -110,11 +147,185 @@ public class MyWorld extends World
             spawnTimer2--;
         }
         
+        // Check skill timers and activate skills if ready
+        if (skillTimer1 <= 0) {
+            activateSkillSide1();
+            skillTimer1 = skillDelay;
+        } else {
+            skillTimer1--;
+        }
+        
+        if (skillTimer2 <= 0) {
+            activateSkillSide2();
+            skillTimer2 = skillDelay;
+        } else {
+            skillTimer2--;
+        }
+        
         // Auto-generate gold over time
         if (Greenfoot.getRandomNumber(300) == 0) {
             gold1 += 10;
             gold2 += 10;
         }
+    }
+    
+    /**
+     * Algorithm for activating skills on side 1 (right side).
+     */
+    private void activateSkillSide1() {
+        int age1 = getPlayerAge(1);
+        
+        // Only attempt to use a skill if we have enough gold for at least the cheapest one
+        if (gold1 >= METEOR_COST) {
+            int skillChoice = decideSkillToUse(age1, gold1);
+            if (skillChoice > 0) {
+                useSkill(1, skillChoice);
+            }
+        }
+    }
+
+    /**
+     * Algorithm for activating skills on side 2 (left side).
+     */
+    private void activateSkillSide2() {
+        int age2 = getPlayerAge(2);
+        
+        // Only attempt to use a skill if we have enough gold for at least the cheapest one
+        if (gold2 >= METEOR_COST) {
+            int skillChoice = decideSkillToUse(age2, gold2);
+            if (skillChoice > 0) {
+                useSkill(2, skillChoice);
+            }
+        }
+    }
+
+    /**
+     * Decide which skill to use based on available gold and age.
+     * Returns 1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam, 0 for none
+     */
+    private int decideSkillToUse(int age, int gold) {
+        // Random chance to use any skill (30% chance)
+        if (Greenfoot.getRandomNumber(100) < 30) {
+            // Choose the most powerful skill available for the age and gold
+            if (age >= 4 && gold >= LASER_BEAM_COST) {
+                return 4; // LaserBeam
+            } else if (age >= 3 && gold >= PLANE_BOMB_COST) {
+                return 3; // PlaneBomb
+            } else if (age >= 2 && gold >= RAINING_ARROWS_COST) {
+                return 2; // RainingArrows
+            } else if (age >= 1 && gold >= METEOR_COST) {
+                return 1; // Meteor
+            }
+        }
+        return 0; // Don't use any skill this time
+    }
+
+    /**
+     * Use the selected skill from the specified side.
+     * @param side The side using the skill (1 or 2)
+     * @param skillType 1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam
+     */
+    private void useSkill(int side, int skillType) {
+        int targetX;
+        int targetY = getHeight() / 2;
+        
+        // Target the opposite side
+        if (side == 1) {
+            targetX = getWidth() / 4; // Target left side
+        } else {
+            targetX = getWidth() * 3 / 4; // Target right side
+        }
+        
+        // Deduct gold based on skill type
+        int cost = 0;
+        
+        switch (skillType) {
+            case 4: // LaserBeam
+                configureLaserBeam(side, targetX, targetY);
+                cost = LASER_BEAM_COST;
+                break;
+            case 3: // PlaneBomb
+                configurePlaneBomb(side, targetX, targetY);
+                cost = PLANE_BOMB_COST;
+                break;
+            case 2: // RainingArrows
+                configureRainingArrows(side, targetX, targetY);
+                cost = RAINING_ARROWS_COST;
+                break;
+            case 1: // Meteor
+                configureMeteor(side, targetX, targetY);
+                cost = METEOR_COST;
+                break;
+        }
+        
+        // Deduct gold
+        if (side == 1) {
+            gold1 -= cost;
+        } else {
+            gold2 -= cost;
+        }
+    }
+
+    /**
+     * Configure and activate the Meteor skill
+     */
+    private void configureMeteor(int side, int targetX, int targetY) {
+        // Configure meteor for the target area
+        meteor.setMeteorCount(8);
+        meteor.setSpawnRate(20);
+        meteor.setSizeRange(20, 50);
+        meteor.setSpeedRange(3, 6);
+        meteor.setOwnerSide(side); // Set which side is using the skill
+        
+        // Target the enemy territory
+        int targetWidth = getWidth() / 3;
+        meteor.setTargetArea(targetX, targetWidth);
+        
+        meteor.start();
+    }
+
+    /**
+     * Configure and activate the RainingArrows skill
+     */
+    private void configureRainingArrows(int side, int targetX, int targetY) {
+        // Configure raining arrows for the target area
+        rainingArrows.setCoverage(40); // 40% coverage
+        rainingArrows.setDuration(150);
+        rainingArrows.setDensity(3);
+        rainingArrows.setOwnerSide(side); // Set which side is using the skill
+        
+        // Target the enemy territory
+        int targetWidth = getWidth() / 3;
+        rainingArrows.setTargetArea(targetX, targetWidth);
+        
+        rainingArrows.start();
+    }
+
+    /**
+     * Configure and activate the PlaneBomb skill
+     */
+    private void configurePlaneBomb(int side, int targetX, int targetY) {
+        // Configure plane direction based on which side is using it
+        int direction = (side == 1) ? -1 : 1; // Right to left for side 1, left to right for side 2
+        
+        planeBomb.setDirection(direction);
+        planeBomb.setOwnerSide(side); // Set which side is using the skill
+        planeBomb.start();
+    }
+
+    /**
+     * Configure and activate the LaserBeam skill
+     */
+    private void configureLaserBeam(int side, int targetX, int targetY) {
+        // Configure laser beam to fire from the player's side across the world
+        int direction = (side == 1) ? 180 : 0; // Left for side 1, right for side 2
+        int startX = (side == 1) ? getWidth() - 50 : 50;
+        
+        laserBeam.setDirection(direction);
+        laserBeam.setGunPosition(startX, targetY);
+        laserBeam.setShots(5);
+        laserBeam.setOwnerSide(side); // Set which side is using the skill
+        laserBeam.start();
     }
     
     /**
@@ -204,7 +415,7 @@ public class MyWorld extends World
     /**
      * Get the current age of a player
      */
-    private int getPlayerAge(int side) {
+    public int getPlayerAge(int side) {
         if (side == 1) {
             return age; // Side 1's age
         } else {

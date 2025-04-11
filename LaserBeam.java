@@ -19,14 +19,20 @@ public class LaserBeam extends SpecialSkill
     private int shotsRemaining = 5; // Number of laser shots to fire
     private ArrayList<Beam> beams = new ArrayList<Beam>();
     private ArrayList<Impact> impacts = new ArrayList<Impact>();
+    private int ownerSide = 0; // Side that activated the skill
+    private int laserDamage = 100; // Damage per laser hit
     
     /**
      * Constructor for the LaserBeam skill
      */
     public LaserBeam() {
-        // Assuming there's a directory with laser gun animation frames
-        laserGunAnimator = new Animator("images/lasergun");
-        laserGunAnimator.setSpeed(100); // Animation speed
+    }
+    
+    /**
+     * Set the side that activated this skill
+     */
+    public void setOwnerSide(int side) {
+        this.ownerSide = side;
     }
     
     /**
@@ -35,9 +41,7 @@ public class LaserBeam extends SpecialSkill
     public void start() {
         World world = getWorld();
         if (world != null && !active) {
-            // Initialize gun position (center of screen by default)
-            gunX = world.getWidth() / 2;
-            gunY = world.getHeight() / 2;
+            // Initialize gun position (will be set by configureLaserBeam method)
             active = true;
             shotsRemaining = 5;
             beams.clear();
@@ -78,7 +82,9 @@ public class LaserBeam extends SpecialSkill
         
         if (active) {
             // Set image to current frame of animation
-            setImage(laserGunAnimator.getCurrentFrame());
+            if (laserGunAnimator != null) {
+                setImage(laserGunAnimator.getCurrentFrame());
+            }
             setLocation(gunX, gunY);
             setRotation(direction);
             
@@ -127,8 +133,6 @@ public class LaserBeam extends SpecialSkill
         Beam beam = new Beam(startX, startY, direction);
         beams.add(beam);
         world.addObject(beam, beam.getX(), beam.getY());
-        
-        Greenfoot.playSound("/sounds/laserBeam.mp3");
     }
     
     /**
@@ -141,7 +145,7 @@ public class LaserBeam extends SpecialSkill
             beam.update();
             
             // Check if beam has hit edge or obstacle
-            if (beam.isAtEdge(world) || beam.hitObstacle()) {
+            if (beam.isAtEdge(world)) {
                 // Create impact effect
                 Impact impact = new Impact(beam.getX(), beam.getY());
                 impacts.add(impact);
@@ -151,9 +155,25 @@ public class LaserBeam extends SpecialSkill
                 beamsToRemove.add(beam);
                 world.removeObject(beam);
             }
+            
+            // Check if beam hit a unit
+            Unit hitUnit = beam.checkUnitHit();
+            if (hitUnit != null) {
+                // Damage the unit
+                hitUnit.hitBySpecialSkill(laserDamage, ownerSide);
+                
+                // Create impact effect at the unit's position
+                Impact impact = new Impact(hitUnit.getX(), hitUnit.getY());
+                impacts.add(impact);
+                world.addObject(impact, impact.getX(), impact.getY());
+                
+                // Mark beam for removal
+                beamsToRemove.add(beam);
+                world.removeObject(beam);
+            }
         }
         
-        // Remove beams that hit edge or obstacles
+        // Remove beams that hit edge, obstacle, or unit
         beams.removeAll(beamsToRemove);
     }
     
@@ -229,11 +249,20 @@ public class LaserBeam extends SpecialSkill
                    y <= 0 || y >= world.getHeight() - 1;
         }
         
-        public boolean hitObstacle() {
-            // Check for collision with obstacles
-            // This is a simplified example - you might need to customize this
-            // based on what classes your obstacles are
-            return getOneIntersectingObject(null) != null;
+        /**
+         * Check if this beam hit a unit
+         */
+        public Unit checkUnitHit() {
+            // Look for units this beam might have hit
+            Actor actor = getOneIntersectingObject(Unit.class);
+            if (actor != null && actor instanceof Unit) {
+                Unit unit = (Unit) actor;
+                // Only hit units from the opposite side
+                if (unit.getSide() != ownerSide) {
+                    return unit;
+                }
+            }
+            return null;
         }
     }
     
@@ -244,15 +273,25 @@ public class LaserBeam extends SpecialSkill
         private int x, y;
         private Animator impactAnimator;
         private boolean completed = false;
+        private int frame = 0;
+        private final int MAX_FRAMES = 10;
         
         public Impact(int x, int y) {
             this.x = x;
             this.y = y;
             
-            GreenfootImage impactImg = new GreenfootImage(20, 20);
-            impactImg.setColor(Color.YELLOW);
-            impactImg.fillOval(0, 0, 20, 20);
-            setImage(impactImg);
+            // Try to use animator if available
+            try {
+                impactAnimator = new Animator("images/laserimpact");
+                impactAnimator.setSpeed(50);
+            } catch (Exception e) {
+                // If no animation available, create a simple impact
+                GreenfootImage impactImg = new GreenfootImage(20, 20);
+                impactImg.setColor(Color.YELLOW);
+                impactImg.fillOval(0, 0, 20, 20);
+                setImage(impactImg);
+                impactAnimator = null;
+            }
         }
         
         public boolean update() {
@@ -267,12 +306,16 @@ public class LaserBeam extends SpecialSkill
                 }
             } else {
                 // Simple impact effect that fades out
-                GreenfootImage img = getImage();
-                int transparency = img.getTransparency() - 10;
-                if (transparency <= 0) {
+                frame++;
+                if (frame >= MAX_FRAMES) {
                     completed = true;
                 } else {
-                    img.setTransparency(transparency);
+                    // Fade out the impact
+                    GreenfootImage img = getImage();
+                    int transparency = 200 - (frame * 20);
+                    if (transparency > 0) {
+                        img.setTransparency(transparency);
+                    }
                 }
             }
             

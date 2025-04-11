@@ -1,5 +1,6 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * RainingArrows is a special skill that creates a barrage of arrows falling from the sky.
@@ -20,6 +21,10 @@ public class RainingArrows extends SpecialSkill
     private int coverage = 80; // Percentage of screen width covered by arrows
     private int duration = 150; // Duration of the effect in acts
     private int timer = 0;
+    private int ownerSide = 0; // Side that activated the skill
+    private int arrowDamage = 20; // Damage per arrow hit
+    private int targetX;
+    private int targetWidth;
     
     /**
      * Constructor for the RainingArrows skill
@@ -38,10 +43,24 @@ public class RainingArrows extends SpecialSkill
             timer = 0;
             arrows.clear();
             impacts.clear();
-            
-            // TODO: Play effect start sound
-            // Greenfoot.playSound("arrow_rain_start.wav");
         }
+    }
+    
+    /**
+     * Set the side that activated this skill
+     */
+    public void setOwnerSide(int side) {
+        this.ownerSide = side;
+    }
+    
+    /**
+     * Set the target area for the arrows
+     * @param x The center x-coordinate of the target area
+     * @param width The width of the target area
+     */
+    public void setTargetArea(int x, int width) {
+        this.targetX = x;
+        this.targetWidth = width;
     }
     
     /**
@@ -110,11 +129,25 @@ public class RainingArrows extends SpecialSkill
      */
     private void spawnArrow(World world) {
         // Calculate spawn position
-        // Center coverage percentage on the screen
         int worldWidth = world.getWidth();
-        int coverageWidth = (worldWidth * coverage) / 100;
-        int startX = (worldWidth - coverageWidth) / 2;
-        int endX = startX + coverageWidth;
+        int coverageWidth;
+        int startX, endX;
+        
+        if (targetX > 0) {
+            // Use target area if set
+            coverageWidth = targetWidth;
+            startX = targetX - coverageWidth / 2;
+            endX = targetX + coverageWidth / 2;
+            
+            // Ensure within world bounds
+            startX = Math.max(0, startX);
+            endX = Math.min(worldWidth, endX);
+        } else {
+            // Default: use coverage percentage across whole screen
+            coverageWidth = (worldWidth * coverage) / 100;
+            startX = (worldWidth - coverageWidth) / 2;
+            endX = startX + coverageWidth;
+        }
         
         // Random X position within the covered area
         int x = Greenfoot.getRandomNumber(endX - startX) + startX;
@@ -138,6 +171,23 @@ public class RainingArrows extends SpecialSkill
         for (Arrow arrow : arrows) {
             arrow.update();
             
+            // Check if arrow has hit a unit
+            Unit hitUnit = arrow.checkUnitHit();
+            if (hitUnit != null) {
+                // Damage the unit
+                hitUnit.hitBySpecialSkill(arrowDamage, ownerSide);
+                
+                // Create impact effect
+                ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
+                impacts.add(impact);
+                world.addObject(impact, impact.getX(), impact.getY());
+                
+                // Mark arrow for removal
+                arrowsToRemove.add(arrow);
+                world.removeObject(arrow);
+                continue; // Skip checking ground hit
+            }
+            
             // Check if arrow has hit the ground
             if (arrow.isAtGround(world)) {
                 // Create impact effect
@@ -151,7 +201,7 @@ public class RainingArrows extends SpecialSkill
             }
         }
         
-        // Remove arrows that hit the ground
+        // Remove arrows that hit the ground or units
         arrows.removeAll(arrowsToRemove);
     }
     
@@ -256,6 +306,23 @@ public class RainingArrows extends SpecialSkill
         
         public boolean isAtGround(World world) {
             return y >= world.getHeight() - 10;
+        }
+        
+        /**
+         * Check if this arrow hit a unit
+         */
+        public Unit checkUnitHit() {
+            // Check for any intersecting units
+            List<Unit> units = getIntersectingObjects(Unit.class);
+            if (units != null && !units.isEmpty()) {
+                for (Unit unit : units) {
+                    // Only damage units from the opposite side
+                    if (unit.getSide() != ownerSide) {
+                        return unit;
+                    }
+                }
+            }
+            return null;
         }
     }
     

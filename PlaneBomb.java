@@ -19,6 +19,9 @@ public class PlaneBomb extends SpecialSkill
     private boolean active = false;
     private ArrayList<Bomb> bombs = new ArrayList<Bomb>();
     private ArrayList<Explosion> explosions = new ArrayList<Explosion>();
+    private int ownerSide = 0; // Side that activated the skill
+    private int bombDamage = 80; // Damage per bomb hit
+    private int targetDirection = 1; // 1 = left to right, -1 = right to left
     
     /**
      * Constructor for the PlaneBomb skill
@@ -30,13 +33,36 @@ public class PlaneBomb extends SpecialSkill
     }
     
     /**
+     * Set the side that activated this skill
+     */
+    public void setOwnerSide(int side) {
+        this.ownerSide = side;
+    }
+    
+    /**
+     * Set the direction of the plane
+     * @param direction 1 for left to right, -1 for right to left
+     */
+    public void setDirection(int direction) {
+        this.targetDirection = direction;
+    }
+    
+    /**
      * Start the plane bombing sequence
      */
     public void start() {
         World world = getWorld();
         if (world != null && !active) {
-            // Initialize plane position
-            planeX = 0;
+            // Initialize plane position based on direction
+            if (targetDirection > 0) {
+                // Left to right
+                planeX = -50;
+            } else {
+                // Right to left
+                planeX = world.getWidth() + 50;
+                // Flip the plane image if needed
+                setRotation(180);
+            }
             planeY = 100;
             active = true;
             bombs.clear();
@@ -54,7 +80,7 @@ public class PlaneBomb extends SpecialSkill
         
         if (active) {
             // Update plane position
-            planeX += planeSpeed;
+            planeX += planeSpeed * targetDirection;
             
             // Set image to current frame of animation
             setImage(animator.getCurrentFrame());
@@ -68,7 +94,8 @@ public class PlaneBomb extends SpecialSkill
             }
             
             // Check if plane has exited the screen
-            if (planeX >= world.getWidth()) {
+            if ((targetDirection > 0 && planeX >= world.getWidth() + 50) || 
+                (targetDirection < 0 && planeX <= -50)) {
                 active = false;
             }
         }
@@ -105,6 +132,9 @@ public class PlaneBomb extends SpecialSkill
                 explosions.add(explosion);
                 world.addObject(explosion, explosion.getX(), explosion.getY());
                 
+                // Damage units in explosion radius
+                damageUnitsInArea(world, bomb.getX(), bomb.getY(), 100);
+                
                 // Mark bomb for removal
                 bombsToRemove.add(bomb);
                 world.removeObject(bomb);
@@ -113,6 +143,28 @@ public class PlaneBomb extends SpecialSkill
         
         // Remove exploded bombs
         bombs.removeAll(bombsToRemove);
+    }
+    
+    /**
+     * Damage units within the explosion radius
+     */
+    private void damageUnitsInArea(World world, int x, int y, int radius) {
+        // Get all units in the world
+        java.util.List<Unit> units = world.getObjects(Unit.class);
+        
+        // Check each unit to see if it's in the damage radius
+        for (Unit unit : units) {
+            int unitX = unit.getX();
+            int unitY = unit.getY();
+            
+            // Calculate distance between unit and explosion center
+            double distance = Math.sqrt(Math.pow(unitX - x, 2) + Math.pow(unitY - y, 2));
+            
+            // If unit is within radius, damage it
+            if (distance <= radius) {
+                unit.hitBySpecialSkill(bombDamage, ownerSide);
+            }
+        }
     }
     
     /**
@@ -147,7 +199,6 @@ public class PlaneBomb extends SpecialSkill
             GreenfootImage g = new GreenfootImage("images/bomb.png");
             g.scale(100, 100);
             setImage(g);
-            Greenfoot.playSound("sounds/bombsFalling.mp3");
         }
         
         public void update() {

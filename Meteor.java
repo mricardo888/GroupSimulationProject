@@ -20,6 +20,10 @@ public class Meteor extends SpecialSkill
     private int maxSize = 60; // Maximum meteor size
     private int minSpeed = 2; // Minimum falling speed
     private int maxSpeed = 7; // Maximum falling speed
+    private int ownerSide = 0; // Side that activated the skill
+    private int meteorDamage = 50; // Damage per meteor hit
+    private int targetX;
+    private int targetWidth;
     
     /**
      * Constructor for the Meteor skill
@@ -39,6 +43,23 @@ public class Meteor extends SpecialSkill
             meteors.clear();
             impacts.clear();
         }
+    }
+    
+    /**
+     * Set the side that activated this skill
+     */
+    public void setOwnerSide(int side) {
+        this.ownerSide = side;
+    }
+    
+    /**
+     * Set the target area for the meteors
+     * @param x The center x-coordinate of the target area
+     * @param width The width of the target area
+     */
+    public void setTargetArea(int x, int width) {
+        this.targetX = x;
+        this.targetWidth = width;
     }
     
     /**
@@ -109,16 +130,25 @@ public class Meteor extends SpecialSkill
         int size = Greenfoot.getRandomNumber(maxSize - minSize + 1) + minSize;
         int speed = Greenfoot.getRandomNumber(maxSpeed - minSpeed + 1) + minSpeed;
         
-        // Random X position within the world
-        int x = Greenfoot.getRandomNumber(world.getWidth());
+        // Random X position within target area instead of full world
+        int minX = Math.max(0, targetX - targetWidth / 2);
+        int maxX = Math.min(world.getWidth(), targetX + targetWidth / 2);
+        int x;
+        
+        if (targetX > 0) {
+            // Use target area if set
+            x = minX + Greenfoot.getRandomNumber(maxX - minX);
+        } else {
+            // Default: random position in world
+            x = Greenfoot.getRandomNumber(world.getWidth());
+        }
+        
         int y = 0; // Start at the top
         
         // Create the meteor
         MeteorObject meteor = new MeteorObject(x, y, size, speed);
         meteors.add(meteor);
         world.addObject(meteor, meteor.getX(), meteor.getY());
-        
-        Greenfoot.playSound("./sounds/CometFalling.mp3");
     }
     
     /**
@@ -136,6 +166,9 @@ public class Meteor extends SpecialSkill
                 MeteorImpact impact = new MeteorImpact(meteor.getX(), meteor.getY(), meteor.getSize());
                 impacts.add(impact);
                 world.addObject(impact, impact.getX(), impact.getY());
+                
+                // Damage units in the impact area
+                damageUnitsInArea(world, meteor.getX(), meteor.getY(), meteor.getSize() * 2);
                 
                 // Mark meteor for removal
                 meteorsToRemove.add(meteor);
@@ -163,6 +196,28 @@ public class Meteor extends SpecialSkill
         
         // Remove completed impacts
         impacts.removeAll(impactsToRemove);
+    }
+    
+    /**
+     * Damage units within the impact radius
+     */
+    private void damageUnitsInArea(World world, int x, int y, int radius) {
+        // Get all units in the world
+        java.util.List<Unit> units = world.getObjects(Unit.class);
+        
+        // Check each unit to see if it's in the damage radius
+        for (Unit unit : units) {
+            int unitX = unit.getX();
+            int unitY = unit.getY();
+            
+            // Calculate distance between unit and impact center
+            double distance = Math.sqrt(Math.pow(unitX - x, 2) + Math.pow(unitY - y, 2));
+            
+            // If unit is within radius, damage it
+            if (distance <= radius) {
+                unit.hitBySpecialSkill(meteorDamage, ownerSide);
+            }
+        }
     }
     
     /**
@@ -277,8 +332,6 @@ public class Meteor extends SpecialSkill
             
             // Scale the impact animation based on meteor size
             int impactScale = size / 20 + 1; // Base impact size on meteor size
-            
-            Greenfoot.playSound("sounds/explosion.mp3");
         }
         
         public boolean update() {
