@@ -1,30 +1,38 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * A health bar that displays the HP of a unit.
+ * A health bar that displays the HP of a unit or tower.
  */
 public class HPBar extends Actor
 {
-    private Unit unit;
+    private Actor target;
     private int maxHP;
     private int width = 50; // Width of the health bar
     private int height = 5; // Height of the health bar
+    private boolean isUnit; // Whether the target is a Unit or a Tower
     
-    public HPBar(Unit unit, int maxHP)
+    public HPBar(Actor target, int maxHP)
     {
-        this.unit = unit;
+        this.target = target;
         this.maxHP = maxHP;
+        this.isUnit = target instanceof Unit;
         updateImage();
     }
     
     public void act() 
     {
-        if (unit != null && unit.getWorld() != null) {
-            // Update position to follow the unit
-            setLocation(unit.getX(), unit.getY() - 30); // Position above the unit
+        if (target != null && target.getWorld() != null) {
+            // Update position to follow the target
+            if (isUnit) {
+                setLocation(target.getX(), target.getY() - 30); // Position above the unit
+            } else {
+                // For tower, position at the top of the tower
+                Tower tower = (Tower)target;
+                setLocation(tower.getX(), tower.getY() - tower.getImage().getHeight()/2 - 20);
+            }
             updateImage();
         } else {
-            // Remove this HP bar if the unit is removed
+            // Remove this HP bar if the target is removed
             if (getWorld() != null) {
                 getWorld().removeObject(this);
             }
@@ -34,7 +42,14 @@ public class HPBar extends Actor
     private void updateImage()
     {
         // Calculate the width of the health portion based on current HP
-        int healthWidth = (int)((double)unit.getHP() / maxHP * width);
+        int currentHP;
+        if (isUnit) {
+            currentHP = ((Unit)target).getHP();
+        } else {
+            currentHP = ((Tower)target).getHP();
+        }
+        
+        int healthWidth = (int)((double)currentHP / maxHP * width);
         
         // Create a new image for the health bar
         GreenfootImage image = new GreenfootImage(width + 2, height + 2);
@@ -48,9 +63,9 @@ public class HPBar extends Actor
         image.fillRect(1, 1, width, height);
         
         // Determine color based on health percentage
-        if (unit.getHP() > maxHP * 0.7) {
+        if (currentHP > maxHP * 0.7) {
             image.setColor(Color.GREEN);
-        } else if (unit.getHP() > maxHP * 0.3) {
+        } else if (currentHP > maxHP * 0.3) {
             image.setColor(Color.YELLOW);
         } else {
             image.setColor(Color.RED);

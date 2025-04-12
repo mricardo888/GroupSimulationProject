@@ -34,7 +34,8 @@ public class MyWorld extends World
     private int xp2;
     
     // Game state variables
-    private int age = 1;
+    private int age1 = 1; // Age for player 1
+    private int age2 = 1; // Age for player 2
     private int spawnTimer1 = 0;
     private int spawnTimer2 = 0;
     private int spawnDelay = 100; // Delay between spawns
@@ -58,6 +59,16 @@ public class MyWorld extends World
     private Label ageLabel1;
     private Label ageLabel2;
     
+    // Tower references
+    private Tower tower1;
+    private Tower tower2;
+    
+    // Tower HP based on age
+    private static final int TOWER_BASE_HP = 1000;
+    
+    // Game state
+    private boolean gameEnded = false;
+    
     /**
      * Constructor for the game world.
      */
@@ -75,23 +86,11 @@ public class MyWorld extends World
         xp1 = Settings.getXp1();
         xp2 = Settings.getXp2();
         
-        // Create gold display labels
-        goldLabel1 = new Label("Gold: " + gold1, 24);
-        goldLabel2 = new Label("Gold: " + gold2, 24);
-        addObject(goldLabel1, 100, 40);
-        addObject(goldLabel2, getWidth() - 100, 40);
+        // Create UI elements
+        setupUI();
         
-        // Create XP display labels
-        xpLabel1 = new Label("XP: " + xp1, 24);
-        xpLabel2 = new Label("XP: " + xp2, 24);
-        addObject(xpLabel1, 100, 70);
-        addObject(xpLabel2, getWidth() - 100, 70);
-        
-        // Create Age display labels
-        ageLabel1 = new Label("Age: " + getAgeDescription(1), 24);
-        ageLabel2 = new Label("Age: " + getAgeDescription(2), 24);
-        addObject(ageLabel1, 100, 100);
-        addObject(ageLabel2, getWidth() - 100, 100);
+        // Create towers for both sides
+        setupTowers();
         
         // Setup special skills
         setupSpecialSkills();
@@ -99,6 +98,85 @@ public class MyWorld extends World
         // Initial spawn
         spawnInitialUnits();
     }
+    
+    /**
+     * Set up UI elements like labels and buttons
+     */
+    private void setupUI() {
+        // Create UI panel backgrounds
+        GreenfootImage panel1 = new GreenfootImage(200, 120);
+        panel1.setColor(new Color(0, 0, 0, 150));
+        panel1.fillRect(0, 0, 200, 120);
+        panel1.setColor(Color.WHITE);
+        panel1.drawRect(0, 0, 199, 119);
+        getBackground().drawImage(panel1, 50, 20);
+        
+        GreenfootImage panel2 = new GreenfootImage(200, 120);
+        panel2.setColor(new Color(0, 0, 0, 150));
+        panel2.fillRect(0, 0, 200, 120);
+        panel2.setColor(Color.WHITE);
+        panel2.drawRect(0, 0, 199, 119);
+        getBackground().drawImage(panel2, getWidth() - 250, 20);
+        
+        // Add player titles
+        Label player1Title = new Label("Player 1", 30);
+        player1Title.setLineColor(Color.YELLOW);
+        addObject(player1Title, 150, 30);
+        
+        Label player2Title = new Label("Player 2", 30);
+        player2Title.setLineColor(Color.YELLOW);
+        addObject(player2Title, getWidth() - 150, 30);
+        
+        // Create gold display labels with icons
+        try {
+            GreenfootImage goldIcon = new GreenfootImage("gold.png");
+            goldIcon.scale(30, 30);
+            getBackground().drawImage(goldIcon, 60, 60);
+            getBackground().drawImage(goldIcon, getWidth() - 240, 60);
+        } catch (Exception e) {
+            // If gold icon isn't available, just leave it out
+        }
+        
+        goldLabel1 = new Label("Gold: " + gold1, 24);
+        goldLabel2 = new Label("Gold: " + gold2, 24);
+        addObject(goldLabel1, 150, 70);
+        addObject(goldLabel2, getWidth() - 150, 70);
+        
+        // Create XP display labels
+        try {
+            GreenfootImage xpIcon = new GreenfootImage("xp.png");
+            xpIcon.scale(30, 30);
+            getBackground().drawImage(xpIcon, 60, 100);
+            getBackground().drawImage(xpIcon, getWidth() - 240, 100);
+        } catch (Exception e) {
+            // If xp icon isn't available, just leave it out
+        }
+        
+        xpLabel1 = new Label("XP: " + xp1, 24);
+        xpLabel2 = new Label("XP: " + xp2, 24);
+        addObject(xpLabel1, 150, 110);
+        addObject(xpLabel2, getWidth() - 150, 110);
+        
+        // Create Age display labels
+        ageLabel1 = new Label("Age: " + getAgeDescription(1), 24);
+        ageLabel2 = new Label("Age: " + getAgeDescription(2), 24);
+        addObject(ageLabel1, 150, 150);
+        addObject(ageLabel2, getWidth() - 150, 150);
+    }
+    
+    /**
+     * Set up towers for both sides
+     */
+    private void setupTowers() {
+        // Create towers with HP based on their age
+        tower1 = new Tower(1, TOWER_BASE_HP * age1, age1);
+        tower2 = new Tower(2, TOWER_BASE_HP * age2, age2);
+        
+        // Add towers to the world - positioned near the edges
+        addObject(tower1, 100, 600); // Left side tower (close to left edge)
+        addObject(tower2, getWidth() - 100, 600); // Right side tower (close to right edge)
+    }
+
     
     /**
      * Initialize and setup the special skills
@@ -121,6 +199,9 @@ public class MyWorld extends World
      * The main game loop.
      */
     public void act() {
+        // Skip if game has ended
+        if (gameEnded) return;
+        
         // Update gold display
         goldLabel1.setValue("Gold: " + gold1);
         goldLabel2.setValue("Gold: " + gold2);
@@ -173,8 +254,6 @@ public class MyWorld extends World
      * Algorithm for activating skills on side 1 (right side).
      */
     private void activateSkillSide1() {
-        int age1 = getPlayerAge(1);
-        
         // Only attempt to use a skill if we have enough gold for at least the cheapest one
         if (gold1 >= METEOR_COST) {
             int skillChoice = decideSkillToUse(age1, gold1);
@@ -188,8 +267,6 @@ public class MyWorld extends World
      * Algorithm for activating skills on side 2 (left side).
      */
     private void activateSkillSide2() {
-        int age2 = getPlayerAge(2);
-        
         // Only attempt to use a skill if we have enough gold for at least the cheapest one
         if (gold2 >= METEOR_COST) {
             int skillChoice = decideSkillToUse(age2, gold2);
@@ -332,9 +409,9 @@ public class MyWorld extends World
      * Spawn initial units for both sides.
      */
     private void spawnInitialUnits() {
-        // Spawn one unit on each side to start
-        spawnUnit(1, -1); // side 1 (right to left)
-        spawnUnit(2, 1);  // side 2 (left to right)
+        // Spawn one unit on each side to start with correct directions
+        spawnUnit(1, 1);  // side 1 (left to right)
+        spawnUnit(2, -1); // side 2 (right to left)
     }
     
     /**
@@ -353,9 +430,9 @@ public class MyWorld extends World
      */
     public void addXP(int side, int amount) {
         if (side == 1) {
-            xp2 += amount;
-        } else {
             xp1 += amount;
+        } else {
+            xp2 += amount;
         }
     }
     
@@ -364,18 +441,16 @@ public class MyWorld extends World
      */
     private void checkAgeAdvancement() {
         // Side 1 age advancement
-        int currentAge1 = getPlayerAge(1);
-        if (currentAge1 < 4) { // Max age is 4
-            int nextAgeThreshold = getNextAgeThreshold(currentAge1);
+        if (age1 < 4) { // Max age is 4
+            int nextAgeThreshold = getNextAgeThreshold(age1);
             if (xp1 >= nextAgeThreshold) {
                 advanceAge(1);
             }
         }
         
         // Side 2 age advancement
-        int currentAge2 = getPlayerAge(2);
-        if (currentAge2 < 4) { // Max age is 4
-            int nextAgeThreshold = getNextAgeThreshold(currentAge2);
+        if (age2 < 4) { // Max age is 4
+            int nextAgeThreshold = getNextAgeThreshold(age2);
             if (xp2 >= nextAgeThreshold) {
                 advanceAge(2);
             }
@@ -387,22 +462,18 @@ public class MyWorld extends World
      */
     private void advanceAge(int side) {
         if (side == 1) {
-            age = Math.min(age + 1, 4); // Side 1's age (capped at 4)
+            age1 = Math.min(age1 + 1, 4); // Side 1's age (capped at 4)
             ageLabel1.setValue("Age: " + getAgeDescription(1));
-            //Greenfoot.playSound("level-up.wav"); // Optional: play a sound effect
+            tower1.updateAge(age1); // Update tower's age and appearance
         } else {
-            // For side 2, we track it separately (we could add a player2Age variable)
-            // For now we'll just increment the label
+            age2 = Math.min(age2 + 1, 4); // Side 2's age (capped at 4)
             ageLabel2.setValue("Age: " + getAgeDescription(2));
-            Greenfoot.playSound("level-up.wav"); // Optional: play a sound effect
+            tower2.updateAge(age2); // Update tower's age and appearance
         }
     }
     
-    /**
-     * Get the age description based on the age number
-     */
     private String getAgeDescription(int side) {
-        int playerAge = getPlayerAge(side);
+        int playerAge = (side == 1) ? age1 : age2;
         switch (playerAge) {
             case 1: return "Stone Age";
             case 2: return "Cave Age";
@@ -412,25 +483,10 @@ public class MyWorld extends World
         }
     }
     
-    /**
-     * Get the current age of a player
-     */
     public int getPlayerAge(int side) {
-        if (side == 1) {
-            return age; // Side 1's age
-        } else {
-            // For side 2, we could track it separately
-            // For this example, we'll calculate it based on XP
-            if (xp2 >= AGE_4_XP_THRESHOLD) return 4;
-            if (xp2 >= AGE_3_XP_THRESHOLD) return 3;
-            if (xp2 >= AGE_2_XP_THRESHOLD) return 2;
-            return 1;
-        }
+        return (side == 1) ? age1 : age2;
     }
     
-    /**
-     * Get the XP threshold for the next age
-     */
     private int getNextAgeThreshold(int currentAge) {
         switch (currentAge) {
             case 1: return AGE_2_XP_THRESHOLD;
@@ -440,32 +496,20 @@ public class MyWorld extends World
         }
     }
     
-    /**
-     * Algorithm for spawning units on side 1 (right side).
-     */
     private void side1() {
         if (gold1 >= LOW_COST) {
-            // Decide which unit to spawn based on available gold
             int unitChoice = decideUnitToSpawn(gold1);
             spawnUnitBySide(1, unitChoice);
         }
     }
     
-    /**
-     * Algorithm for spawning units on side 2 (left side).
-     */
     private void side2() {
         if (gold2 >= LOW_COST) {
-            // Decide which unit to spawn based on available gold
             int unitChoice = decideUnitToSpawn(gold2);
             spawnUnitBySide(2, unitChoice);
         }
     }
     
-    /**
-     * Decide which unit to spawn based on available gold.
-     * Returns 1 for Low, 2 for Mid, 3 for High
-     */
     private int decideUnitToSpawn(int gold) {
         if (gold >= HIGH_COST && Greenfoot.getRandomNumber(10) < 3) {
             return 3; // 30% chance to spawn High if enough gold
@@ -476,11 +520,9 @@ public class MyWorld extends World
         }
     }
     
-    /**
-     * Spawn a unit on the specified side.
-     */
     private void spawnUnitBySide(int side, int unitType) {
-        int direction = (side == 1) ? -1 : 1;
+        // Fix: Assign the correct direction based on side
+        int direction = (side == 1) ? 1 : -1;  // Side 1 moves left to right, Side 2 moves right to left
         Unit unit = null;
         int cost = 0;
         int playerAge = getPlayerAge(side);
@@ -508,26 +550,59 @@ public class MyWorld extends World
             gold2 -= cost;
         }
         
-        // Add the unit to the world
+        // Add the unit to the world - 50 pixels away from each tower on the correct side
         if (side == 1) {
-            addObject(unit, getWidth() - 50, 600);
+            addObject(unit, 100 + 50, 600); // 50 pixels to the right of left tower
         } else {
-            addObject(unit, 50, 600);
+            addObject(unit, getWidth() - 100 - 50, 600); // 50 pixels to the left of right tower
         }
     }
     
-    /**
-     * Helper method to spawn a unit on the specified side.
-     */
     private void spawnUnit(int side, int direction) {
         int playerAge = getPlayerAge(side);
         Unit unit = new Low(playerAge, 100, direction);
         if (side == 1) {
-            addObject(unit, getWidth() - 50, 600);
+            addObject(unit, 100 + 50, 600); // 50 pixels to the right of left tower
             gold1 -= LOW_COST;
         } else {
-            addObject(unit, 50, 600);
+            addObject(unit, getWidth() - 100 - 50, 600); // 50 pixels to the left of right tower
             gold2 -= LOW_COST;
         }
+    }
+    
+    /**
+     * Called when a tower is destroyed to end the game
+     * 
+     * @param losingSide The side whose tower was destroyed
+     */
+    public void gameOver(int losingSide) {
+        if (gameEnded) return; // Prevent multiple calls
+        
+        gameEnded = true;
+        
+        // Determine the winning side
+        int winningSide = (losingSide == 1) ? 2 : 1;
+        
+        // Create a fade-out effect
+        GreenfootImage fadeOut = new GreenfootImage(getWidth(), getHeight());
+        fadeOut.setColor(new Color(0, 0, 0, 150));
+        fadeOut.fill();
+        getBackground().drawImage(fadeOut, 0, 0);
+        
+        // Add a game over message
+        Label gameOverLabel = new Label("Game Over!", 80);
+        gameOverLabel.setLineColor(Color.WHITE);
+        addObject(gameOverLabel, getWidth()/2, getHeight()/2 - 50);
+        
+        // Add winner message
+        Label winnerLabel = new Label("Player " + winningSide + " Wins!", 60);
+        winnerLabel.setLineColor(Color.YELLOW);
+        addObject(winnerLabel, getWidth()/2, getHeight()/2 + 50);
+        
+        // Wait a moment before transitioning to finish screen
+        Greenfoot.delay(100);
+        
+        // Transition to finish screen
+        Greenfoot.setWorld(new FinishScreen(winningSide));
     }
 }
