@@ -74,6 +74,14 @@ public abstract class Unit extends SuperSmoothMover
         return null;
     }
     
+    /**
+     * Check if this unit is currently attacking
+     * @return true if the unit is in attack mode
+     */
+    public boolean isAttacking() {
+        return attacking;
+    }
+    
     public void act()
     {
         if (hp <= 0) {
@@ -123,7 +131,7 @@ public abstract class Unit extends SuperSmoothMover
         }
     }
 
-    private void performAttack() {
+    protected void performAttack() {
         // Get the current attack frame without flipping it again
         setImage(attackAnimation.getCurrentFrame());
         
@@ -149,7 +157,7 @@ public abstract class Unit extends SuperSmoothMover
         }
     }
     
-    private void death() {
+    protected void death() {
         setImage(deathAnimation.getCurrentFrame());
         if (deathAnimation.getImageIndex() + 1 == deathAnimation.getSize()) {
             // Award gold and XP to the opponent when a unit dies
@@ -161,7 +169,7 @@ public abstract class Unit extends SuperSmoothMover
     /**
      * Award gold and XP rewards to the opponent
      */
-    private void awardRewards() {
+    protected void awardRewards() {
         if (getWorld() instanceof MyWorld) {
             MyWorld world = (MyWorld) getWorld();
             
@@ -270,9 +278,9 @@ public abstract class Unit extends SuperSmoothMover
     
     public int getSide() {
         if (direction == -1) {
-            return 1;
-        } else {
             return 2;
+        } else {
+            return 1;
         }
     }
     

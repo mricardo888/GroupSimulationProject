@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * PlaneBomb is a special skill that creates a plane flying across the screen
  * and dropping bombs that explode on impact with the ground.
- * All plane, bomb, and explosion functionality is contained within this class.
+ * Modified to only target units (not towers) and spawn in the middle area.
  * 
  * @author Your Name
  * @version 1.0
@@ -21,7 +21,7 @@ public class PlaneBomb extends SpecialSkill
     private ArrayList<Bomb> bombs = new ArrayList<Bomb>();
     private ArrayList<Explosion> explosions = new ArrayList<Explosion>();
     private int ownerSide = 0; // Side that activated the skill
-    private int bombDamage = 200; // Damage per bomb hit - increased from 80
+    private int bombDamage = 200; // Damage per bomb hit
     private int targetDirection = 1; // 1 = left to right, -1 = right to left
     
     /**
@@ -64,17 +64,20 @@ public class PlaneBomb extends SpecialSkill
     public void start() {
         World world = getWorld();
         if (world != null && !active) {
-            // Initialize plane position based on direction
+            // Initialize plane position based on direction, but always start from the sides of the middle area
+            int middleX = world.getWidth() / 2;
+            int middleWidth = world.getWidth() / 3; // 1/3 of screen width for middle area
+            
             if (targetDirection > 0) {
-                // Left to right
-                planeX = -50;
+                // Left to right, start at the left edge of middle area
+                planeX = middleX - middleWidth / 2;
             } else {
-                // Right to left
-                planeX = world.getWidth() + 50;
+                // Right to left, start at the right edge of middle area
+                planeX = middleX + middleWidth / 2;
                 // Flip the plane image if needed
                 setRotation(180);
             }
-            planeY = 100;
+            planeY = 100; // Fly higher up for better visibility
             active = true;
             bombs.clear();
             explosions.clear();
@@ -99,16 +102,24 @@ public class PlaneBomb extends SpecialSkill
             }
             setLocation(planeX, planeY);
             
-            // Drop bombs
-            bombTimer++;
-            if (bombTimer >= bombDropRate) {
-                dropBomb(world);
-                bombTimer = 0;
+            // Drop bombs only while in the middle area
+            int middleX = world.getWidth() / 2;
+            int middleWidth = world.getWidth() / 3;
+            int leftBound = middleX - middleWidth / 2;
+            int rightBound = middleX + middleWidth / 2;
+            
+            // Only drop bombs while in the middle area
+            if (planeX >= leftBound && planeX <= rightBound) {
+                bombTimer++;
+                if (bombTimer >= bombDropRate) {
+                    dropBomb(world);
+                    bombTimer = 0;
+                }
             }
             
-            // Check if plane has exited the screen
-            if ((targetDirection > 0 && planeX >= world.getWidth() + 50) || 
-                (targetDirection < 0 && planeX <= -50)) {
+            // Check if plane has exited the screen or middle area boundaries
+            if ((targetDirection > 0 && planeX >= rightBound + 100) || 
+                (targetDirection < 0 && planeX <= leftBound - 100)) {
                 active = false;
             }
         }
@@ -165,25 +176,7 @@ public class PlaneBomb extends SpecialSkill
                 continue;
             }
             
-            // Check if bomb hit a tower
-            Tower hitTower = bomb.checkTowerHit();
-            if (hitTower != null) {
-                // Create explosion
-                Explosion explosion = new Explosion(bomb.getX(), bomb.getY());
-                explosions.add(explosion);
-                world.addObject(explosion, explosion.getX(), explosion.getY());
-                
-                // Damage the tower
-                hitTower.damage(bombDamage * 2); // Double damage to towers
-                
-                // Damage units in explosion radius
-                damageUnitsInArea(world, bomb.getX(), bomb.getY(), 100);
-                
-                // Mark bomb for removal
-                bombsToRemove.add(bomb);
-                world.removeObject(bomb);
-                continue;
-            }
+            // Removed tower damage check
             
             // Check if bomb hit ground or Y=600
             if (bomb.isAtGround(world)) {
@@ -226,20 +219,7 @@ public class PlaneBomb extends SpecialSkill
             }
         }
         
-        // Also damage towers in the blast radius
-        java.util.List<Tower> towers = world.getObjects(Tower.class);
-        for (Tower tower : towers) {
-            int towerX = tower.getX();
-            int towerY = tower.getY();
-            
-            // Calculate distance between tower and explosion center
-            double distance = Math.sqrt(Math.pow(towerX - x, 2) + Math.pow(towerY - y, 2));
-            
-            // If tower is within radius and from enemy side, damage it
-            if (distance <= radius && tower.getSide() != ownerSide) {
-                tower.damage(bombDamage);
-            }
-        }
+        // Removed tower damage section
     }
     
     /**
@@ -309,22 +289,6 @@ public class PlaneBomb extends SpecialSkill
          */
         public List<Unit> getIntersectingUnits() {
             return getIntersectingObjects(Unit.class);
-        }
-        
-        /**
-         * Check if this bomb hit a tower
-         */
-        public Tower checkTowerHit() {
-            // Get all intersecting towers
-            List<Tower> towers = getIntersectingObjects(Tower.class);
-            
-            // Return the first enemy tower if any
-            for (Tower tower : towers) {
-                if (tower.getSide() != ownerSide) {
-                    return tower;
-                }
-            }
-            return null;
         }
     }
     

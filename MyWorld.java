@@ -3,6 +3,7 @@ import java.util.Random;
 
 /**
  * The game world where units spawn and battle.
+ * Updated to make special skills spawn in the middle and not damage towers.
  */
 public class MyWorld extends World
 {
@@ -17,7 +18,7 @@ public class MyWorld extends World
     private static final int MID_COST = 70;
     private static final int HIGH_COST = 130;
     
-    // Special skill costs
+    // Special skill costs (kept for reference but no longer used for deducting gold)
     private static final int METEOR_COST = 200;
     private static final int RAINING_ARROWS_COST = 300;
     private static final int PLANE_BOMB_COST = 400;
@@ -274,20 +275,21 @@ public class MyWorld extends World
     }
 
     /**
-     * Decide which skill to use based on available gold and age.
+     * Decide which skill to use based on age.
      * Returns 1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam, 0 for none
      */
     private int decideSkillToUse(int age, int gold) {
-        // Random chance to use any skill (increased to 70% after threshold)
+        // Random chance to use any skill (70%)
         if (Greenfoot.getRandomNumber(100) < 70) {
-            // Choose the most powerful skill available for the age and gold
-            if (age >= 4 && gold >= LASER_BEAM_COST) {
+            // Choose the most powerful skill available for the age
+            // No gold requirement anymore
+            if (age >= 4) {
                 return 4; // LaserBeam
-            } else if (age >= 3 && gold >= PLANE_BOMB_COST) {
+            } else if (age >= 3) {
                 return 3; // PlaneBomb
-            } else if (age >= 2 && gold >= RAINING_ARROWS_COST) {
+            } else if (age >= 2) {
                 return 2; // RainingArrows
-            } else if (age >= 1 && gold >= METEOR_COST) {
+            } else if (age >= 1) {
                 return 1; // Meteor
             }
         }
@@ -309,24 +311,18 @@ public class MyWorld extends World
      * Configure and activate the Meteor skill
      */
     private void configureMeteor(int side, int targetX, int targetY) {
-        // Configure meteor for the target area - always target the enemy territory
+        // Configure meteor to target the middle of the screen
         meteor.setMeteorCount(8);
         meteor.setSpawnRate(20);
         meteor.setSizeRange(20, 50);
         meteor.setSpeedRange(3, 6);
         meteor.setOwnerSide(side); // Set which side is using the skill
         
-        int targetWidth = getWidth() / 3;
+        // Target the middle area of the screen
+        int middleX = getWidth() / 2;
+        int targetWidth = getWidth() / 3; // 1/3 of screen width
         
-        // Ensure meteor targets the opposite side
-        int enemyTargetX;
-        if (side == 1) {
-            enemyTargetX = getWidth() * 3 / 4; // Target right side (enemy of side 1)
-        } else {
-            enemyTargetX = getWidth() / 4; // Target left side (enemy of side 2)
-        }
-        
-        meteor.setTargetArea(enemyTargetX, targetWidth);
+        meteor.setTargetArea(middleX, targetWidth);
         meteor.start();
     }
     
@@ -334,24 +330,14 @@ public class MyWorld extends World
      * Configure and activate the LaserBeam skill
      */
     private void configureLaserBeam(int side, int targetX, int targetY) {
-        // Configure laser beam to fire from the player's side across to the enemy side
-        int direction, startX;
+        // Configure laser beam to fire from top of the screen, straight down
+        // Use the middle of the screen for X position
+        int startX = getWidth() / 2; // Middle of screen
+        int startY = 0; // Top of the screen
         
-        if (side == 1) {
-            // Side 1 fires from left to right
-            direction = 0; // 0 = right
-            startX = 100; // Start from left side
-            targetY = 600; // Target height where most units will be
-        } else {
-            // Side 2 fires from right to left
-            direction = 180; // 180 = left
-            startX = getWidth() - 100; // Start from right side
-            targetY = 600; // Target height where most units will be
-        }
-        
-        laserBeam.setDirection(direction);
-        laserBeam.setGunPosition(startX, targetY);
-        laserBeam.setShots(5);
+        // LaserBeam now fires vertically from top to bottom
+        laserBeam.setGunPosition(startX, startY);
+        laserBeam.setShots(8); // Increased shot count for better coverage
         laserBeam.setOwnerSide(side);
         laserBeam.start();
     }
@@ -360,23 +346,17 @@ public class MyWorld extends World
      * Configure and activate the RainingArrows skill
      */
     private void configureRainingArrows(int side, int targetX, int targetY) {
-        // Configure raining arrows for the target area - always enemy territory
+        // Configure raining arrows to target the middle of the screen
         rainingArrows.setCoverage(40); // 40% coverage
         rainingArrows.setDuration(150);
         rainingArrows.setDensity(3);
         rainingArrows.setOwnerSide(side);
         
-        // Target the enemy territory
-        int enemyTargetX;
-        if (side == 1) {
-            enemyTargetX = getWidth() * 3 / 4; // Target right side (enemy of side 1)
-        } else {
-            enemyTargetX = getWidth() / 4; // Target left side (enemy of side 2)
-        }
+        // Target the middle area
+        int middleX = getWidth() / 2;
+        int targetWidth = getWidth() / 3; // 1/3 of screen width
         
-        int targetWidth = getWidth() / 3;
-        rainingArrows.setTargetArea(enemyTargetX, targetWidth);
-        
+        rainingArrows.setTargetArea(middleX, targetWidth);
         rainingArrows.start();
     }
     
@@ -384,21 +364,20 @@ public class MyWorld extends World
      * Configure and activate the PlaneBomb skill
      */
     private void configurePlaneBomb(int side, int targetX, int targetY) {
-        // Configure plane direction
+        // Configure plane to fly across the middle of the screen
         int direction;
         
         if (side == 1) {
-            // Side 1 plane should fly in a direction to drop bombs on enemy (side 2)
-            // Since side 2 is on the right, plane should fly left to right for better targeting
+            // Side 1 plane flies left to right
             direction = 1; // Left to right
         } else {
-            // Side 2 plane should fly in a direction to drop bombs on enemy (side 1)
-            // Since side 1 is on the left, plane should fly right to left for better targeting
+            // Side 2 plane flies right to left
             direction = -1; // Right to left
         }
         
         planeBomb.setDirection(direction);
         planeBomb.setOwnerSide(side);
+        // The PlaneBomb class should be updated to target the middle area
         planeBomb.start();
     }
     
@@ -408,45 +387,27 @@ public class MyWorld extends World
      * @param skillType 1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam
      */
     private void useSkill(int side, int skillType) {
-        int targetX;
+        // All skills now target the middle of the screen
+        int targetX = getWidth() / 2;
         int targetY = getHeight() / 2;
         
-        // Target the opposite side
-        if (side == 1) {
-            targetX = getWidth() * 3 / 4; // Target right side for side 1
-        } else {
-            targetX = getWidth() / 4; // Target left side for side 2
-        }
-        
-        // Deduct gold based on skill type
-        int cost = 0;
-        
+        // Skills are now free - remove gold deduction
         switch (skillType) {
             case 4: // LaserBeam
                 configureLaserBeam(side, targetX, targetY);
-                cost = LASER_BEAM_COST;
                 break;
             case 3: // PlaneBomb
                 configurePlaneBomb(side, targetX, targetY);
-                cost = PLANE_BOMB_COST;
                 break;
             case 2: // RainingArrows
                 configureRainingArrows(side, targetX, targetY);
-                cost = RAINING_ARROWS_COST;
                 break;
             case 1: // Meteor
                 configureMeteor(side, targetX, targetY);
-                cost = METEOR_COST;
                 break;
         }
-        
-        // Deduct gold
-        if (side == 1) {
-            gold1 -= cost;
-        } else {
-            gold2 -= cost;
-        }
-    }    
+    }
+    
     /**
      * Spawn initial units for both sides.
      */
@@ -604,17 +565,15 @@ public class MyWorld extends World
     private void side1() {
         int unitCount = countUnits(1);
         
-        // Allow manual skill activation when enough gold is available
-        if (gold1 >= METEOR_COST) {
-            // Higher chance to use skills manually in higher ages
-            int useSkillChance = 5 + (age1 * 5); // 10% in Age 1, 15% in Age 2, etc.
-            
-            if (Greenfoot.getRandomNumber(100) < useSkillChance) {
-                int skillChoice = decideSkillToUse(age1, gold1);
-                if (skillChoice > 0) {
-                    useSkill(1, skillChoice);
-                    return;
-                }
+        // Allow skill activation with no gold requirement
+        // Higher chance to use skills in higher ages
+        int useSkillChance = 5 + (age1 * 5); // 10% in Age 1, 15% in Age 2, etc.
+        
+        if (Greenfoot.getRandomNumber(100) < useSkillChance) {
+            int skillChoice = decideSkillToUse(age1, gold1);
+            if (skillChoice > 0) {
+                useSkill(1, skillChoice);
+                return;
             }
         }
         
@@ -641,17 +600,15 @@ public class MyWorld extends World
     private void side2() {
         int unitCount = countUnits(2);
         
-        // Allow manual skill activation when enough gold is available
-        if (gold2 >= METEOR_COST) {
-            // Higher chance to use skills manually in higher ages
-            int useSkillChance = 5 + (age2 * 5); // 10% in Age 1, 15% in Age 2, etc.
-            
-            if (Greenfoot.getRandomNumber(100) < useSkillChance) {
-                int skillChoice = decideSkillToUse(age2, gold2);
-                if (skillChoice > 0) {
-                    useSkill(2, skillChoice);
-                    return;
-                }
+        // Allow skill activation with no gold requirement
+        // Higher chance to use skills in higher ages
+        int useSkillChance = 5 + (age2 * 5); // 10% in Age 1, 15% in Age 2, etc.
+        
+        if (Greenfoot.getRandomNumber(100) < useSkillChance) {
+            int skillChoice = decideSkillToUse(age2, gold2);
+            if (skillChoice > 0) {
+                useSkill(2, skillChoice);
+                return;
             }
         }
         
