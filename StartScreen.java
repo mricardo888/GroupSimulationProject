@@ -37,6 +37,11 @@ public class StartScreen extends World
         bg.scale(1024,800);
         setBackground(bg);
 
+        //title
+        GreenfootImage title = new GreenfootImage("title.png");
+        title.scale((int)(title.getWidth() * 0.3), (int)(title.getHeight() * 0.3));
+        getBackground().drawImage(title,getWidth()/2-230,150);
+
         
         
     }

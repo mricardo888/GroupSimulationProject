@@ -99,8 +99,22 @@ public class Settings extends World
     
     public void act(){
         checkValue();
+        limitValue();
     }
-    
+    public void limitValue(){
+        if (gold1 < 0){
+            gold1 = 0;
+        }
+        if (gold2 < 0){
+            gold2 = 0;
+        }
+        if (xp1 < 0){
+            xp1 = 0;
+        }
+        if (xp2 < 0){
+            xp2 = 0;
+        }
+    }
     
     //Label value
     public void checkValue(){
