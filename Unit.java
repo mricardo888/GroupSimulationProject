@@ -49,6 +49,9 @@ public abstract class Unit extends SuperSmoothMover
                 deathAnimation.flip();
             }
         }
+        
+        // Increase base damage by 2.5x to make the game faster
+        this.attackDamage = 25; // Increased from default 10
     }
     
     public void addedToWorld(World world) {
@@ -60,7 +63,7 @@ public abstract class Unit extends SuperSmoothMover
     public void changeSpeed(double s) {
         speed = s;
     }
-    // Add this new method to find enemy towers:
+
     public Tower enemyTowerInRange(int r) {
         java.util.List<Tower> towers = getObjectsInRange(r, Tower.class);
         for (Tower t : towers) {
@@ -71,7 +74,6 @@ public abstract class Unit extends SuperSmoothMover
         return null;
     }
     
-    // Replace the existing act() method with this one:
     public void act()
     {
         if (hp <= 0) {
@@ -106,8 +108,13 @@ public abstract class Unit extends SuperSmoothMover
         if (attacking) {
             performAttack();
         } else if (moving) {
-            setImage(walkAnimation.getCurrentFrame());
-            setLocation(getX() + speed * direction, getY());
+            // Check if there's a friendly unit ahead before moving
+            Unit friendlyAhead = friendlyUnitAhead();
+            if (friendlyAhead == null) {
+                // Only move if no friendly unit is too close ahead
+                setImage(walkAnimation.getCurrentFrame());
+                setLocation(getX() + speed * direction, getY());
+            }
         }
         
         // Reduce attack cooldown if it's active
@@ -115,8 +122,7 @@ public abstract class Unit extends SuperSmoothMover
             attackCooldown--;
         }
     }
-    
-    // Replace the existing performAttack() method with this one:
+
     private void performAttack() {
         // Get the current attack frame without flipping it again
         setImage(attackAnimation.getCurrentFrame());
@@ -165,15 +171,21 @@ public abstract class Unit extends SuperSmoothMover
             if (direction == 1) { // If side 1 unit died, award to side 2
                 world.addGold(2, getGoldReward());
                 world.addXP(2, getXPReward());
+                world.recordKill(2); // Record a kill for side 2
             } else { // If side 2 unit died, award to side 1
                 world.addGold(1, getGoldReward());
                 world.addXP(1, getXPReward());
+                world.recordKill(1); // Record a kill for side 1
             }
         }
     }
     
     public void attack(int damage) {
         hp -= damage;
+    }
+    
+    public int getDirection() {
+        return direction;
     }
     
     /**
@@ -199,6 +211,51 @@ public abstract class Unit extends SuperSmoothMover
                 awardRewards();
             }
         }
+    }
+
+    public Unit friendlyUnitAhead() {
+        int requiredSpacing = 50; // Increased to 50 pixels as requested
+        
+        // Get all units within a search range in front of this unit
+        ArrayList<Unit> units = new ArrayList<Unit>();
+        for (Unit u : getWorld().getObjects(Unit.class)) {
+            // Only consider units in the same lane (similar Y coordinate)
+            if (Math.abs(u.getY() - getY()) < 10) {
+                // Only consider units that belong to the same side (same direction)
+                if (u.getDirection() == this.direction && u != this) {
+                    // Check if the unit is ahead of current unit in the direction of movement
+                    if ((direction == 1 && u.getX() > getX()) ||
+                        (direction == -1 && u.getX() < getX())) {
+                        
+                        // Calculate distance between units
+                        int distance = Math.abs(u.getX() - getX());
+                        
+                        // If unit is too close, add to the list
+                        if (distance < requiredSpacing) {
+                            units.add(u);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Return the closest unit ahead if any are too close
+        if (!units.isEmpty()) {
+            Unit closest = units.get(0);
+            int closestDistance = Math.abs(closest.getX() - getX());
+            
+            for (Unit u : units) {
+                int distance = Math.abs(u.getX() - getX());
+                if (distance < closestDistance) {
+                    closest = u;
+                    closestDistance = distance;
+                }
+            }
+            
+            return closest;
+        }
+        
+        return null;
     }
     
     /**
@@ -236,9 +293,10 @@ public abstract class Unit extends SuperSmoothMover
     
     // Setter for attack damage
     public void setAttackDamage(int damage) {
-        this.attackDamage = damage;
+        // Base damage is multiplied by age factor to scale with progress
+        this.attackDamage = damage * 3 * age; // Tripled base values and multiplied by age
     }
-    
+
     // Getter for the unit cost
     public abstract int getCost();
     

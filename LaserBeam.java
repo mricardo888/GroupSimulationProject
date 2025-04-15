@@ -20,7 +20,7 @@ public class LaserBeam extends SpecialSkill
     private ArrayList<Beam> beams = new ArrayList<Beam>();
     private ArrayList<Impact> impacts = new ArrayList<Impact>();
     private int ownerSide = 0; // Side that activated the skill
-    private int laserDamage = 100; // Damage per laser hit
+    private int laserDamage = 250; // Damage per laser hit - increased from 100
     
     /**
      * Constructor for the LaserBeam skill
@@ -144,7 +144,7 @@ public class LaserBeam extends SpecialSkill
         for (Beam beam : beams) {
             beam.update();
             
-            // Check if beam has hit edge or obstacle
+            // Check if beam has hit edge or Y=600
             if (beam.isAtEdge(world)) {
                 // Create impact effect
                 Impact impact = new Impact(beam.getX(), beam.getY());
@@ -154,6 +154,7 @@ public class LaserBeam extends SpecialSkill
                 // Mark beam for removal
                 beamsToRemove.add(beam);
                 world.removeObject(beam);
+                continue; // Skip remaining checks
             }
             
             // Check if beam hit a unit
@@ -170,10 +171,27 @@ public class LaserBeam extends SpecialSkill
                 // Mark beam for removal
                 beamsToRemove.add(beam);
                 world.removeObject(beam);
+                continue; // Skip remaining checks
+            }
+            
+            // Check if beam hit an enemy tower
+            Tower hitTower = beam.checkTowerHit();
+            if (hitTower != null) {
+                // Damage the tower
+                hitTower.damage(laserDamage * 2); // Double damage to towers
+                
+                // Create impact effect at the tower's position
+                Impact impact = new Impact(hitTower.getX(), hitTower.getY());
+                impacts.add(impact);
+                world.addObject(impact, impact.getX(), impact.getY());
+                
+                // Mark beam for removal
+                beamsToRemove.add(beam);
+                world.removeObject(beam);
             }
         }
         
-        // Remove beams that hit edge, obstacle, or unit
+        // Remove beams that hit edge, obstacle, unit or tower
         beams.removeAll(beamsToRemove);
     }
     
@@ -246,7 +264,7 @@ public class LaserBeam extends SpecialSkill
         
         public boolean isAtEdge(World world) {
             return x <= 0 || x >= world.getWidth() - 1 || 
-                   y <= 0 || y >= world.getHeight() - 1;
+                   y <= 0 || y >= world.getHeight() - 1 || y >= 600;
         }
         
         /**
@@ -260,6 +278,22 @@ public class LaserBeam extends SpecialSkill
                 // Only hit units from the opposite side
                 if (unit.getSide() != ownerSide) {
                     return unit;
+                }
+            }
+            return null;
+        }
+        
+        /**
+         * Check if this beam hit a tower
+         */
+        public Tower checkTowerHit() {
+            // Look for towers this beam might have hit
+            Actor actor = getOneIntersectingObject(Tower.class);
+            if (actor != null && actor instanceof Tower) {
+                Tower tower = (Tower) actor;
+                // Only hit towers from the opposite side
+                if (tower.getSide() != ownerSide) {
+                    return tower;
                 }
             }
             return null;
