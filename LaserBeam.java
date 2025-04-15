@@ -3,10 +3,8 @@ import java.util.ArrayList;
 
 /**
  * LaserBeam is a special skill that shoots laser beams across the screen.
- * The beams can be fired in different directions and create impact effects when hitting targets.
- * 
- * @author Your Name 
- * @version 1.0
+ * Now modified to fire vertically downward from the top of the screen.
+ * Only damages units (not towers) and targets the middle area of the screen.
  */
 public class LaserBeam extends SpecialSkill
 {
@@ -15,12 +13,12 @@ public class LaserBeam extends SpecialSkill
     private int shootTimer = 0;
     private boolean active = false;
     private int gunX, gunY;
-    private int direction = 0; // 0 = right, 90 = down, 180 = left, 270 = up
     private int shotsRemaining = 5; // Number of laser shots to fire
     private ArrayList<Beam> beams = new ArrayList<Beam>();
     private ArrayList<Impact> impacts = new ArrayList<Impact>();
     private int ownerSide = 0; // Side that activated the skill
-    private int laserDamage = 250; // Damage per laser hit - increased from 100
+    private int laserDamage = 250; // Damage per laser hit
+    private int targetWidth; // Width of the target area
     
     /**
      * Constructor for the LaserBeam skill
@@ -41,7 +39,6 @@ public class LaserBeam extends SpecialSkill
     public void start() {
         World world = getWorld();
         if (world != null && !active) {
-            // Initialize gun position (will be set by configureLaserBeam method)
             active = true;
             shotsRemaining = 5;
             beams.clear();
@@ -50,26 +47,18 @@ public class LaserBeam extends SpecialSkill
     }
     
     /**
-     * Set the direction of laser firing
-     * @param direction 0 = right, 90 = down, 180 = left, 270 = up
-     */
-    public void setDirection(int direction) {
-        this.direction = direction;
-    }
-    
-    /**
-     * Set the position of the laser gun
-     */
-    public void setGunPosition(int x, int y) {
-        this.gunX = x;
-        this.gunY = y;
-    }
-    
-    /**
      * Set the number of shots to fire
      */
     public void setShots(int shots) {
         this.shotsRemaining = shots;
+    }
+    
+    /**
+     * Set the position and target area for the laser beam
+     */
+    public void setGunPosition(int x, int y) {
+        this.gunX = x;
+        this.gunY = y;
     }
     
     /**
@@ -81,14 +70,15 @@ public class LaserBeam extends SpecialSkill
         if (world == null) return;
         
         if (active) {
-            // Set image to current frame of animation
+            // Set image to current frame of animation if available
             if (laserGunAnimator != null) {
                 setImage(laserGunAnimator.getCurrentFrame());
             }
-            setLocation(gunX, gunY);
-            setRotation(direction);
             
-            // Fire laser beams
+            // Position at the top-middle of the screen
+            setLocation(gunX, gunY);
+            
+            // Fire laser beams vertically downward
             shootTimer++;
             if (shootTimer >= shootingDelay && shotsRemaining > 0) {
                 fireBeam(world);
@@ -110,27 +100,24 @@ public class LaserBeam extends SpecialSkill
     }
     
     /**
-     * Fire a laser beam from the gun
+     * Fire a laser beam from the top of the screen
      */
     private void fireBeam(World world) {
-        // Calculate starting position based on gun position and direction
-        int startX = gunX;
-        int startY = gunY;
+        // Calculate a random position within the middle area
+        int worldWidth = world.getWidth();
+        int middleX = worldWidth / 2;
+        int middleWidth = worldWidth / 3; // 1/3 of the screen for middle area
         
-        // Offset the beam starting position to be at the end of the gun
-        int offset = 30; // Distance from center of gun to muzzle
-        if (direction == 0) { // Right
-            startX += offset;
-        } else if (direction == 90) { // Down
-            startY += offset;
-        } else if (direction == 180) { // Left
-            startX -= offset;
-        } else if (direction == 270) { // Up
-            startY -= offset;
-        }
+        // Randomize X position within the target area
+        int minX = middleX - middleWidth / 2;
+        int maxX = middleX + middleWidth / 2;
+        int startX = minX + Greenfoot.getRandomNumber(maxX - minX);
         
-        // Create the beam
-        Beam beam = new Beam(startX, startY, direction);
+        // Start at the top of the screen
+        int startY = 0;
+        
+        // Create the beam - direction 90 means straight down
+        Beam beam = new Beam(startX, startY, 90);
         beams.add(beam);
         world.addObject(beam, beam.getX(), beam.getY());
     }
@@ -144,7 +131,7 @@ public class LaserBeam extends SpecialSkill
         for (Beam beam : beams) {
             beam.update();
             
-            // Check if beam has hit edge or Y=600
+            // Check if beam has hit edge or reached bottom
             if (beam.isAtEdge(world)) {
                 // Create impact effect
                 Impact impact = new Impact(beam.getX(), beam.getY());
@@ -174,24 +161,10 @@ public class LaserBeam extends SpecialSkill
                 continue; // Skip remaining checks
             }
             
-            // Check if beam hit an enemy tower
-            Tower hitTower = beam.checkTowerHit();
-            if (hitTower != null) {
-                // Damage the tower
-                hitTower.damage(laserDamage * 2); // Double damage to towers
-                
-                // Create impact effect at the tower's position
-                Impact impact = new Impact(hitTower.getX(), hitTower.getY());
-                impacts.add(impact);
-                world.addObject(impact, impact.getX(), impact.getY());
-                
-                // Mark beam for removal
-                beamsToRemove.add(beam);
-                world.removeObject(beam);
-            }
+            // Note: Tower damage check is removed - lasers no longer affect towers
         }
         
-        // Remove beams that hit edge, obstacle, unit or tower
+        // Remove beams that hit edge, obstacle, or unit
         beams.removeAll(beamsToRemove);
     }
     
@@ -218,7 +191,7 @@ public class LaserBeam extends SpecialSkill
      */
     private class Beam extends Actor {
         private int x, y;
-        private int direction;
+        private int direction; // 90 = straight down
         private int speed = 10;
         private GreenfootImage beamImage;
         
@@ -227,8 +200,8 @@ public class LaserBeam extends SpecialSkill
             this.y = y;
             this.direction = direction;
             
-            // Create laser beam image
-            beamImage = new GreenfootImage(20, 5);
+            // Create laser beam image - taller for vertical orientation
+            beamImage = new GreenfootImage(5, 30);
             beamImage.setColor(Color.RED);
             beamImage.fill();
             
@@ -236,21 +209,12 @@ public class LaserBeam extends SpecialSkill
             beamImage.setTransparency(200);
             
             setImage(beamImage);
-            setRotation(direction);
+            setRotation(direction); // Point downward (90 degrees)
         }
         
         public void update() {
-            // Move beam in the specified direction
-            if (direction == 0) { // Right
-                x += speed;
-            } else if (direction == 90) { // Down
-                y += speed;
-            } else if (direction == 180) { // Left
-                x -= speed;
-            } else if (direction == 270) { // Up
-                y -= speed;
-            }
-            
+            // Move beam straight down
+            y += speed;
             setLocation(x, y);
         }
         
@@ -263,8 +227,8 @@ public class LaserBeam extends SpecialSkill
         }
         
         public boolean isAtEdge(World world) {
-            return x <= 0 || x >= world.getWidth() - 1 || 
-                   y <= 0 || y >= world.getHeight() - 1 || y >= 600;
+            // Only check for bottom edge since we're firing downward
+            return y >= 600 || y >= world.getHeight() - 1;
         }
         
         /**
@@ -278,22 +242,6 @@ public class LaserBeam extends SpecialSkill
                 // Only hit units from the opposite side
                 if (unit.getSide() != ownerSide) {
                     return unit;
-                }
-            }
-            return null;
-        }
-        
-        /**
-         * Check if this beam hit a tower
-         */
-        public Tower checkTowerHit() {
-            // Look for towers this beam might have hit
-            Actor actor = getOneIntersectingObject(Tower.class);
-            if (actor != null && actor instanceof Tower) {
-                Tower tower = (Tower) actor;
-                // Only hit towers from the opposite side
-                if (tower.getSide() != ownerSide) {
-                    return tower;
                 }
             }
             return null;

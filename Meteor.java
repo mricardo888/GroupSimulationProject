@@ -4,10 +4,8 @@ import java.util.List;
 
 /**
  * A Meteor class that creates meteors falling from the sky.
- * The meteors can vary in size, speed, and can create explosions on impact.
- * 
- * @author Your Name 
- * @version 1.0
+ * The meteors can vary in size, speed, and can create explosions on impact with the ground.
+ * Modified to spawn in the middle area and not damage towers.
  */
 public class Meteor extends SpecialSkill
 {
@@ -131,18 +129,14 @@ public class Meteor extends SpecialSkill
         int size = Greenfoot.getRandomNumber(maxSize - minSize + 1) + minSize;
         int speed = Greenfoot.getRandomNumber(maxSpeed - minSpeed + 1) + minSpeed;
         
-        // Random X position within target area instead of full world
-        int minX = Math.max(0, targetX - targetWidth / 2);
-        int maxX = Math.min(world.getWidth(), targetX + targetWidth / 2);
-        int x;
+        // Always spawn in the middle area of the screen
+        int middleX = world.getWidth() / 2;
+        int spawnWidth = world.getWidth() / 3; // Use 1/3 of the screen width centered in the middle
         
-        if (targetX > 0) {
-            // Use target area if set
-            x = minX + Greenfoot.getRandomNumber(maxX - minX);
-        } else {
-            // Default: random position in world
-            x = Greenfoot.getRandomNumber(world.getWidth());
-        }
+        // Random X position within the middle area
+        int minX = middleX - spawnWidth / 2;
+        int maxX = middleX + spawnWidth / 2;
+        int x = minX + Greenfoot.getRandomNumber(maxX - minX);
         
         int y = 0; // Start at the top
         
@@ -181,22 +175,10 @@ public class Meteor extends SpecialSkill
                 }
             }
             
-            // Check for tower hits
-            List<Tower> towers = meteor.getIntersectingTowers();
-            boolean hitTower = false;
+            // No longer check for tower hits - skip this part to prevent tower damage
             
-            for (Tower tower : towers) {
-                // Only damage towers from the opposite side
-                int towerSide = tower.getSide();
-                if (towerSide != ownerSide) {
-                    // Damage the tower
-                    tower.damage(meteorDamage * 2); // Double damage to towers
-                    hitTower = true;
-                }
-            }
-            
-            // Check if meteor has hit the ground, a unit, or a tower
-            if (meteor.isAtGround(world) || hitEnemy || hitTower) {
+            // Check if meteor has hit the ground or a unit
+            if (meteor.isAtGround(world) || hitEnemy) {
                 // Create impact effect
                 MeteorImpact impact = new MeteorImpact(meteor.getX(), meteor.getY(), meteor.getSize());
                 impacts.add(impact);
@@ -211,7 +193,7 @@ public class Meteor extends SpecialSkill
             }
         }
         
-        // Remove meteors that hit the ground, units or towers
+        // Remove meteors that hit the ground or units
         meteors.removeAll(meteorsToRemove);
     }
     
@@ -254,20 +236,7 @@ public class Meteor extends SpecialSkill
             }
         }
         
-        // Check for towers in damage radius
-        java.util.List<Tower> towers = world.getObjects(Tower.class);
-        for (Tower tower : towers) {
-            int towerX = tower.getX();
-            int towerY = tower.getY();
-            
-            // Calculate distance between tower and impact center
-            double distance = Math.sqrt(Math.pow(towerX - x, 2) + Math.pow(towerY - y, 2));
-            
-            // Only damage enemy towers - towers from the opposite side of the owner
-            if (distance <= radius && tower.getSide() != ownerSide) {
-                tower.damage(meteorDamage);
-            }
-        }
+        // Removed tower damage section
     }
     
     /**

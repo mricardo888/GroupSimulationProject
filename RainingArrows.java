@@ -5,6 +5,7 @@ import java.util.List;
 /**
  * RainingArrows is a special skill that creates a barrage of arrows falling from the sky.
  * The arrows can damage enemies and create impact effects when hitting the ground.
+ * Modified to spawn in the middle area and not damage towers.
  * 
  * @author Your Name 
  * @version 1.0
@@ -22,7 +23,7 @@ public class RainingArrows extends SpecialSkill
     private int duration = 150; // Duration of the effect in acts
     private int timer = 0;
     private int ownerSide = 0; // Side that activated the skill
-    private int arrowDamage = 75; // Damage per arrow hit - increased from 20
+    private int arrowDamage = 75; // Damage per arrow hit
     private int targetX;
     private int targetWidth;
     
@@ -128,28 +129,16 @@ public class RainingArrows extends SpecialSkill
      * Spawn a new arrow
      */
     private void spawnArrow(World world) {
-        // Calculate spawn position
+        // Calculate spawn position - always in the middle area
         int worldWidth = world.getWidth();
-        int coverageWidth;
-        int startX, endX;
+        int middleX = worldWidth / 2;
+        int middleWidth = worldWidth / 3; // 1/3 of the screen width for middle area
         
-        if (targetX > 0) {
-            // Use target area if set
-            coverageWidth = targetWidth;
-            startX = targetX - coverageWidth / 2;
-            endX = targetX + coverageWidth / 2;
-            
-            // Ensure within world bounds
-            startX = Math.max(0, startX);
-            endX = Math.min(worldWidth, endX);
-        } else {
-            // Default: use coverage percentage across whole screen
-            coverageWidth = (worldWidth * coverage) / 100;
-            startX = (worldWidth - coverageWidth) / 2;
-            endX = startX + coverageWidth;
-        }
+        // Calculate bounds for the middle area
+        int startX = middleX - middleWidth / 2;
+        int endX = middleX + middleWidth / 2;
         
-        // Random X position within the covered area
+        // Random X position within the middle area
         int x = Greenfoot.getRandomNumber(endX - startX) + startX;
         int y = 0; // Start at the top
         
@@ -188,22 +177,7 @@ public class RainingArrows extends SpecialSkill
                 continue; // Skip checking ground hit
             }
             
-            // Check if arrow has hit an enemy tower
-            Tower hitTower = arrow.checkTowerHit();
-            if (hitTower != null) {
-                // Damage the tower
-                hitTower.damage(arrowDamage);
-                
-                // Create impact effect
-                ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
-                impacts.add(impact);
-                world.addObject(impact, impact.getX(), impact.getY());
-                
-                // Mark arrow for removal
-                arrowsToRemove.add(arrow);
-                world.removeObject(arrow);
-                continue; // Skip checking ground hit
-            }
+            // Removed tower hit check - arrows no longer affect towers
             
             // Check if arrow has hit the ground or Y=600
             if (arrow.isAtGround(world)) {
@@ -218,7 +192,7 @@ public class RainingArrows extends SpecialSkill
             }
         }
         
-        // Remove arrows that hit the ground, units or towers
+        // Remove arrows that hit the ground or units
         arrows.removeAll(arrowsToRemove);
     }
     
@@ -331,23 +305,6 @@ public class RainingArrows extends SpecialSkill
                     // Only damage units from the opposite side
                     if (unit.getSide() != ownerSide) {
                         return unit;
-                    }
-                }
-            }
-            return null;
-        }
-        
-        /**
-         * Check if this arrow hit a tower
-         */
-        public Tower checkTowerHit() {
-            // Look for towers this arrow might have hit
-            List<Tower> towers = getIntersectingObjects(Tower.class);
-            if (towers != null && !towers.isEmpty()) {
-                for (Tower tower : towers) {
-                    // Only damage towers from the opposite side
-                    if (tower.getSide() != ownerSide) {
-                        return tower;
                     }
                 }
             }
