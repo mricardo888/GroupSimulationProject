@@ -22,7 +22,7 @@ public class Low extends Unit
     
     @Override
     public int getCost() {
-        return COST;
+        return COST + (30 * age);
     }
     
     @Override

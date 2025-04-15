@@ -1,5 +1,6 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A Meteor class that creates meteors falling from the sky.
@@ -21,7 +22,7 @@ public class Meteor extends SpecialSkill
     private int minSpeed = 2; // Minimum falling speed
     private int maxSpeed = 7; // Maximum falling speed
     private int ownerSide = 0; // Side that activated the skill
-    private int meteorDamage = 50; // Damage per meteor hit
+    private int meteorDamage = 150; // Damage per meteor hit
     private int targetX;
     private int targetWidth;
     
@@ -147,6 +148,7 @@ public class Meteor extends SpecialSkill
         
         // Create the meteor
         MeteorObject meteor = new MeteorObject(x, y, size, speed);
+        meteor.setSide(ownerSide); // Set the side of the meteor to match the owner
         meteors.add(meteor);
         world.addObject(meteor, meteor.getX(), meteor.getY());
     }
@@ -160,8 +162,41 @@ public class Meteor extends SpecialSkill
         for (MeteorObject meteor : meteors) {
             meteor.update();
             
-            // Check if meteor has hit the ground
-            if (meteor.isAtGround(world)) {
+            // Get current location for accurate collision check
+            int currentX = meteor.getX();
+            int currentY = meteor.getY();
+            
+            // Check if meteor has hit a unit
+            boolean hitEnemy = false;
+            
+            // Get all units at current position
+            List<Unit> units = meteor.getIntersectingUnits();
+            for (Unit unit : units) {
+                // Check if the unit is from the opposite side of the meteor owner
+                int unitSide = unit.getSide();
+                if (unitSide != ownerSide) {
+                    // Damage the unit directly - make sure we use the owner's side for the skill damage
+                    unit.hitBySpecialSkill(meteorDamage, ownerSide);
+                    hitEnemy = true;
+                }
+            }
+            
+            // Check for tower hits
+            List<Tower> towers = meteor.getIntersectingTowers();
+            boolean hitTower = false;
+            
+            for (Tower tower : towers) {
+                // Only damage towers from the opposite side
+                int towerSide = tower.getSide();
+                if (towerSide != ownerSide) {
+                    // Damage the tower
+                    tower.damage(meteorDamage * 2); // Double damage to towers
+                    hitTower = true;
+                }
+            }
+            
+            // Check if meteor has hit the ground, a unit, or a tower
+            if (meteor.isAtGround(world) || hitEnemy || hitTower) {
                 // Create impact effect
                 MeteorImpact impact = new MeteorImpact(meteor.getX(), meteor.getY(), meteor.getSize());
                 impacts.add(impact);
@@ -176,7 +211,7 @@ public class Meteor extends SpecialSkill
             }
         }
         
-        // Remove meteors that hit the ground
+        // Remove meteors that hit the ground, units or towers
         meteors.removeAll(meteorsToRemove);
     }
     
@@ -213,9 +248,24 @@ public class Meteor extends SpecialSkill
             // Calculate distance between unit and impact center
             double distance = Math.sqrt(Math.pow(unitX - x, 2) + Math.pow(unitY - y, 2));
             
-            // If unit is within radius, damage it
-            if (distance <= radius) {
+            // Only damage enemy units - units from the opposite side of the owner
+            if (distance <= radius && unit.getSide() != ownerSide) {
                 unit.hitBySpecialSkill(meteorDamage, ownerSide);
+            }
+        }
+        
+        // Check for towers in damage radius
+        java.util.List<Tower> towers = world.getObjects(Tower.class);
+        for (Tower tower : towers) {
+            int towerX = tower.getX();
+            int towerY = tower.getY();
+            
+            // Calculate distance between tower and impact center
+            double distance = Math.sqrt(Math.pow(towerX - x, 2) + Math.pow(towerY - y, 2));
+            
+            // Only damage enemy towers - towers from the opposite side of the owner
+            if (distance <= radius && tower.getSide() != ownerSide) {
+                tower.damage(meteorDamage);
             }
         }
     }
@@ -229,6 +279,7 @@ public class Meteor extends SpecialSkill
         private int speed;
         private int rotation = 0;
         private int rotationSpeed;
+        private int side;  // Added this to track which side the meteor belongs to
         
         public MeteorObject(int x, int y, int size, int speed) {
             this.x = x;
@@ -239,6 +290,14 @@ public class Meteor extends SpecialSkill
             
             // Create meteor image
             createMeteorImage();
+        }
+        
+        public void setSide(int side) {
+            this.side = side;
+        }
+        
+        public int getSide() {
+            return side;
         }
         
         private void createMeteorImage() {
@@ -308,7 +367,22 @@ public class Meteor extends SpecialSkill
         }
         
         public boolean isAtGround(World world) {
-            return y >= world.getHeight() - (size / 2);
+            // Check if meteor has reached the ground level or hitting Y=600
+            return y >= 600 || y >= world.getHeight() - (size / 2);
+        }
+        
+        /**
+         * Get all intersecting units - safe way for inner class
+         */
+        public List<Unit> getIntersectingUnits() {
+            return getIntersectingObjects(Unit.class);
+        }
+        
+        /**
+         * Get all intersecting towers - safe way for inner class
+         */
+        public List<Tower> getIntersectingTowers() {
+            return getIntersectingObjects(Tower.class);
         }
     }
     
@@ -320,6 +394,8 @@ public class Meteor extends SpecialSkill
         private int size;
         private Animator impactAnimator;
         private boolean completed = false;
+        private int frame = 0;
+        private final int MAX_FRAMES = 20;
         
         public MeteorImpact(int x, int y, int size) {
             this.x = x;
@@ -327,20 +403,45 @@ public class Meteor extends SpecialSkill
             this.size = size;
             
             // Use the explosion spritesheet for the impact
-            impactAnimator = new Animator("images/explosion");
-            impactAnimator.setSpeed(80);
-            
-            // Scale the impact animation based on meteor size
-            int impactScale = size / 20 + 1; // Base impact size on meteor size
+            try {
+                impactAnimator = new Animator("images/explosion");
+                impactAnimator.setSpeed(80);
+                
+                // Scale the impact animation based on meteor size
+                int impactScale = size / 20 + 1; // Base impact size on meteor size
+            } catch (Exception e) {
+                // If animator can't be created, use a simple effect
+                GreenfootImage img = new GreenfootImage(size * 2, size * 2);
+                img.setColor(new Color(255, 165, 0, 180)); // Orange with transparency
+                img.fillOval(0, 0, size * 2, size * 2);
+                setImage(img);
+                impactAnimator = null;
+            }
         }
         
         public boolean update() {
-            // Update animation using the explosion spritesheet
-            setImage(impactAnimator.getCurrentFrame());
-            
-            // Check if animation has completed one cycle
-            if (impactAnimator.getImageIndex() == impactAnimator.getSize() - 1 && !completed) {
-                completed = true;
+            if (impactAnimator != null) {
+                // Update animation using the explosion spritesheet
+                setImage(impactAnimator.getCurrentFrame());
+                
+                // Check if animation has completed one cycle
+                if (impactAnimator.getImageIndex() == impactAnimator.getSize() - 1 && !completed) {
+                    completed = true;
+                }
+            } else {
+                // Simple animation that fades out
+                frame++;
+                if (frame >= MAX_FRAMES) {
+                    completed = true;
+                } else {
+                    // Fade out gradually
+                    GreenfootImage img = getImage();
+                    if (img.getTransparency() > 20) {
+                        img.setTransparency(img.getTransparency() - 20);
+                    } else {
+                        completed = true;
+                    }
+                }
             }
             
             return completed;

@@ -1,5 +1,6 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * PlaneBomb is a special skill that creates a plane flying across the screen
@@ -20,16 +21,26 @@ public class PlaneBomb extends SpecialSkill
     private ArrayList<Bomb> bombs = new ArrayList<Bomb>();
     private ArrayList<Explosion> explosions = new ArrayList<Explosion>();
     private int ownerSide = 0; // Side that activated the skill
-    private int bombDamage = 80; // Damage per bomb hit
+    private int bombDamage = 200; // Damage per bomb hit - increased from 80
     private int targetDirection = 1; // 1 = left to right, -1 = right to left
     
     /**
      * Constructor for the PlaneBomb skill
      */
     public PlaneBomb() {
-        animator = new Animator("images/plane");
-        animator.scale(150, 150);
-        animator.setSpeed(100);
+        try {
+            animator = new Animator("images/plane");
+            animator.scale(150, 150);
+            animator.setSpeed(100);
+        } catch (Exception e) {
+            // Create a simple plane if animator fails
+            GreenfootImage planeImg = new GreenfootImage(150, 50);
+            planeImg.setColor(Color.GRAY);
+            planeImg.fillRect(0, 0, 150, 50);
+            planeImg.setColor(Color.DARK_GRAY);
+            planeImg.fillRect(0, 20, 50, 10);
+            setImage(planeImg);
+        }
     }
     
     /**
@@ -83,7 +94,9 @@ public class PlaneBomb extends SpecialSkill
             planeX += planeSpeed * targetDirection;
             
             // Set image to current frame of animation
-            setImage(animator.getCurrentFrame());
+            if (animator != null) {
+                setImage(animator.getCurrentFrame());
+            }
             setLocation(planeX, planeY);
             
             // Drop bombs
@@ -125,7 +138,54 @@ public class PlaneBomb extends SpecialSkill
         for (Bomb bomb : bombs) {
             bomb.update();
             
-            // Check if bomb hit ground
+            // Check if bomb hit a unit - Use public methods instead of protected ones
+            List<Unit> intersectingUnits = bomb.getIntersectingUnits();
+            boolean hitUnit = false;
+            
+            for (Unit unit : intersectingUnits) {
+                // Only damage units from opposite side
+                if (unit.getSide() != ownerSide) {
+                    hitUnit = true;
+                    break;
+                }
+            }
+            
+            if (hitUnit) {
+                // Create explosion
+                Explosion explosion = new Explosion(bomb.getX(), bomb.getY());
+                explosions.add(explosion);
+                world.addObject(explosion, explosion.getX(), explosion.getY());
+                
+                // Damage units in explosion radius
+                damageUnitsInArea(world, bomb.getX(), bomb.getY(), 100);
+                
+                // Mark bomb for removal
+                bombsToRemove.add(bomb);
+                world.removeObject(bomb);
+                continue;
+            }
+            
+            // Check if bomb hit a tower
+            Tower hitTower = bomb.checkTowerHit();
+            if (hitTower != null) {
+                // Create explosion
+                Explosion explosion = new Explosion(bomb.getX(), bomb.getY());
+                explosions.add(explosion);
+                world.addObject(explosion, explosion.getX(), explosion.getY());
+                
+                // Damage the tower
+                hitTower.damage(bombDamage * 2); // Double damage to towers
+                
+                // Damage units in explosion radius
+                damageUnitsInArea(world, bomb.getX(), bomb.getY(), 100);
+                
+                // Mark bomb for removal
+                bombsToRemove.add(bomb);
+                world.removeObject(bomb);
+                continue;
+            }
+            
+            // Check if bomb hit ground or Y=600
             if (bomb.isAtGround(world)) {
                 // Create explosion
                 Explosion explosion = new Explosion(bomb.getX(), bomb.getY());
@@ -160,9 +220,24 @@ public class PlaneBomb extends SpecialSkill
             // Calculate distance between unit and explosion center
             double distance = Math.sqrt(Math.pow(unitX - x, 2) + Math.pow(unitY - y, 2));
             
-            // If unit is within radius, damage it
-            if (distance <= radius) {
+            // If unit is within radius and from enemy side, damage it
+            if (distance <= radius && unit.getSide() != ownerSide) {
                 unit.hitBySpecialSkill(bombDamage, ownerSide);
+            }
+        }
+        
+        // Also damage towers in the blast radius
+        java.util.List<Tower> towers = world.getObjects(Tower.class);
+        for (Tower tower : towers) {
+            int towerX = tower.getX();
+            int towerY = tower.getY();
+            
+            // Calculate distance between tower and explosion center
+            double distance = Math.sqrt(Math.pow(towerX - x, 2) + Math.pow(towerY - y, 2));
+            
+            // If tower is within radius and from enemy side, damage it
+            if (distance <= radius && tower.getSide() != ownerSide) {
+                tower.damage(bombDamage);
             }
         }
     }
@@ -196,9 +271,18 @@ public class PlaneBomb extends SpecialSkill
         public Bomb(int x, int y) {
             this.x = x;
             this.y = y;
-            GreenfootImage g = new GreenfootImage("images/bomb.png");
-            g.scale(100, 100);
-            setImage(g);
+            try {
+                GreenfootImage g = new GreenfootImage("images/bomb.png");
+                g.scale(30, 30);
+                setImage(g);
+            } catch (Exception e) {
+                // Create a simple bomb if image not available
+                GreenfootImage bombImg = new GreenfootImage(20, 30);
+                bombImg.setColor(Color.BLACK);
+                bombImg.fillOval(0, 0, 20, 20);
+                bombImg.fillRect(8, 0, 4, 10);
+                setImage(bombImg);
+            }
         }
         
         public void update() {
@@ -216,7 +300,31 @@ public class PlaneBomb extends SpecialSkill
         }
         
         public boolean isAtGround(World world) {
-            return y >= world.getHeight() - 10;
+            // Return true when Y >= 600 or at world bottom
+            return y >= 600 || y >= world.getHeight() - 10;
+        }
+        
+        /**
+         * Get intersecting units - public method to use instead of protected getOneIntersectingObject
+         */
+        public List<Unit> getIntersectingUnits() {
+            return getIntersectingObjects(Unit.class);
+        }
+        
+        /**
+         * Check if this bomb hit a tower
+         */
+        public Tower checkTowerHit() {
+            // Get all intersecting towers
+            List<Tower> towers = getIntersectingObjects(Tower.class);
+            
+            // Return the first enemy tower if any
+            for (Tower tower : towers) {
+                if (tower.getSide() != ownerSide) {
+                    return tower;
+                }
+            }
+            return null;
         }
     }
     
@@ -227,21 +335,51 @@ public class PlaneBomb extends SpecialSkill
         private int x, y;
         private Animator explosionAnimator;
         private boolean completed = false;
+        private int frame = 0;
+        private final int MAX_FRAMES = 20;
         
         public Explosion(int x, int y) {
             this.x = x;
             this.y = y;
-            explosionAnimator = new Animator("images/explosion");
-            explosionAnimator.setSpeed(100);
+            try {
+                explosionAnimator = new Animator("images/explosion");
+                explosionAnimator.setSpeed(100);
+            } catch (Exception e) {
+                // Create a simple explosion if animator fails
+                GreenfootImage explosionImg = new GreenfootImage(100, 100);
+                explosionImg.setColor(new Color(255, 140, 0, 180)); // Orange with transparency
+                explosionImg.fillOval(0, 0, 100, 100);
+                explosionImg.setColor(new Color(255, 69, 0, 150)); // Red-orange with transparency
+                explosionImg.fillOval(20, 20, 60, 60);
+                explosionImg.setColor(new Color(255, 255, 0, 200)); // Yellow with transparency
+                explosionImg.fillOval(35, 35, 30, 30);
+                setImage(explosionImg);
+                explosionAnimator = null;
+            }
         }
         
         public boolean update() {
-            // Update animation
-            setImage(explosionAnimator.getCurrentFrame());
-            
-            // Check if animation has completed one cycle
-            if (explosionAnimator.getImageIndex() == explosionAnimator.getSize() - 1 && !completed) {
-                completed = true;
+            if (explosionAnimator != null) {
+                // Update animation
+                setImage(explosionAnimator.getCurrentFrame());
+                
+                // Check if animation has completed one cycle
+                if (explosionAnimator.getImageIndex() == explosionAnimator.getSize() - 1 && !completed) {
+                    completed = true;
+                }
+            } else {
+                // Simple fading animation
+                frame++;
+                if (frame >= MAX_FRAMES) {
+                    completed = true;
+                } else {
+                    // Fade out gradually
+                    GreenfootImage img = getImage();
+                    int transparency = 200 - (frame * 10);
+                    if (transparency > 0) {
+                        img.setTransparency(transparency);
+                    }
+                }
             }
             
             return completed;

@@ -22,7 +22,7 @@ public class RainingArrows extends SpecialSkill
     private int duration = 150; // Duration of the effect in acts
     private int timer = 0;
     private int ownerSide = 0; // Side that activated the skill
-    private int arrowDamage = 20; // Damage per arrow hit
+    private int arrowDamage = 75; // Damage per arrow hit - increased from 20
     private int targetX;
     private int targetWidth;
     
@@ -188,7 +188,24 @@ public class RainingArrows extends SpecialSkill
                 continue; // Skip checking ground hit
             }
             
-            // Check if arrow has hit the ground
+            // Check if arrow has hit an enemy tower
+            Tower hitTower = arrow.checkTowerHit();
+            if (hitTower != null) {
+                // Damage the tower
+                hitTower.damage(arrowDamage);
+                
+                // Create impact effect
+                ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
+                impacts.add(impact);
+                world.addObject(impact, impact.getX(), impact.getY());
+                
+                // Mark arrow for removal
+                arrowsToRemove.add(arrow);
+                world.removeObject(arrow);
+                continue; // Skip checking ground hit
+            }
+            
+            // Check if arrow has hit the ground or Y=600
             if (arrow.isAtGround(world)) {
                 // Create impact effect
                 ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
@@ -201,7 +218,7 @@ public class RainingArrows extends SpecialSkill
             }
         }
         
-        // Remove arrows that hit the ground or units
+        // Remove arrows that hit the ground, units or towers
         arrows.removeAll(arrowsToRemove);
     }
     
@@ -248,34 +265,28 @@ public class RainingArrows extends SpecialSkill
         }
         
         private void createArrowImage() {
-            try {
-                // Try to load arrow image from file
-                GreenfootImage baseImage = new GreenfootImage("images/arrow.png");
-                setImage(baseImage);
-            } catch (Exception e) {
-                // If arrow image can't be loaded, create one programmatically
-                GreenfootImage arrowImage = new GreenfootImage(30, 8);
-                
-                // Draw arrowhead
-                arrowImage.setColor(Color.DARK_GRAY);
-                int[] xPoints = {25, 30, 25};
-                int[] yPoints = {0, 4, 8};
-                arrowImage.fillPolygon(xPoints, yPoints, 3);
-                
-                // Draw arrow shaft
-                arrowImage.setColor(Color.CYAN);
-                arrowImage.fillRect(0, 3, 25, 2);
-                
-                // Draw fletching
-                arrowImage.setColor(Color.RED);
-                int[] fxPoints = {0, 5, 0};
-                int[] fyPoints1 = {1, 4, 3};
-                int[] fyPoints2 = {5, 4, 7};
-                arrowImage.fillPolygon(fxPoints, fyPoints1, 3);
-                arrowImage.fillPolygon(fxPoints, fyPoints2, 3);
-                
-                setImage(arrowImage);
-            }
+            // If arrow image can't be loaded, create one programmatically
+            GreenfootImage arrowImage = new GreenfootImage(30, 8);
+            
+            // Draw arrowhead
+            arrowImage.setColor(Color.DARK_GRAY);
+            int[] xPoints = {25, 30, 25};
+            int[] yPoints = {0, 4, 8};
+            arrowImage.fillPolygon(xPoints, yPoints, 3);
+            
+            // Draw arrow shaft
+            arrowImage.setColor(Color.CYAN);
+            arrowImage.fillRect(0, 3, 25, 2);
+            
+            // Draw fletching
+            arrowImage.setColor(Color.RED);
+            int[] fxPoints = {0, 5, 0};
+            int[] fyPoints1 = {1, 4, 3};
+            int[] fyPoints2 = {5, 4, 7};
+            arrowImage.fillPolygon(fxPoints, fyPoints1, 3);
+            arrowImage.fillPolygon(fxPoints, fyPoints2, 3);
+            
+            setImage(arrowImage);
             
             // Set rotation of the arrow based on its trajectory
             setRotation(angle);
@@ -305,7 +316,8 @@ public class RainingArrows extends SpecialSkill
         }
         
         public boolean isAtGround(World world) {
-            return y >= world.getHeight() - 10;
+            // Return true when Y >= 600 or at world bottom
+            return y >= 600 || y >= world.getHeight() - 10;
         }
         
         /**
@@ -319,6 +331,23 @@ public class RainingArrows extends SpecialSkill
                     // Only damage units from the opposite side
                     if (unit.getSide() != ownerSide) {
                         return unit;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        /**
+         * Check if this arrow hit a tower
+         */
+        public Tower checkTowerHit() {
+            // Look for towers this arrow might have hit
+            List<Tower> towers = getIntersectingObjects(Tower.class);
+            if (towers != null && !towers.isEmpty()) {
+                for (Tower tower : towers) {
+                    // Only damage towers from the opposite side
+                    if (tower.getSide() != ownerSide) {
+                        return tower;
                     }
                 }
             }
