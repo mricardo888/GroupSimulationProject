@@ -9,6 +9,7 @@ public class Mid extends Unit
     private static final int COST = 70;
     private boolean isAttackingWithAlly = false;
     private Unit targetEnemy = null;
+    private boolean hasDealtDamageThisCycle = false;
     
     public Mid(int age, int hp, int direction) {
         super(age, hp, direction, "mid");
@@ -137,20 +138,29 @@ public class Mid extends Unit
         // Get the current attack frame
         setImage(attackAnimation.getCurrentFrame());
         
-        // If attack animation finished one cycle and cooldown is 0
-        if (attackAnimation.getImageIndex() == attackAnimation.getSize() - 1 && attackCooldown == 0) {
+        // If attack animation is at the last frame (one complete cycle)
+        if (attackAnimation.getImageIndex() == attackAnimation.getSize() - 1) {
+            // Reset flag for next cycle
+            hasDealtDamageThisCycle = false;
+        }
+        
+        // If we are at the attack frame (middle of animation) and haven't dealt damage yet this cycle
+        int attackFrame = attackAnimation.getSize() / 2;
+        if (attackAnimation.getImageIndex() == attackFrame && !hasDealtDamageThisCycle && attackCooldown == 0) {
             // Check if target enemy is still valid
             if (targetEnemy != null && targetEnemy.getWorld() != null) {
                 // Apply damage to the targeted enemy
                 targetEnemy.attack(attackDamage);
-                attackCooldown = 30; // Reduced cooldown when supporting
+                attackCooldown = 10; // Shorter cooldown when supporting
+                hasDealtDamageThisCycle = true; // Mark that we've dealt damage in this cycle
             } else {
                 // If target is gone, look for a new one
                 Unit newTarget = enemyInRange(attackRange);
                 if (newTarget != null) {
                     targetEnemy = newTarget;
                     newTarget.attack(attackDamage);
-                    attackCooldown = 30;
+                    attackCooldown = 10;
+                    hasDealtDamageThisCycle = true;
                 } else {
                     // No target found, reset attack state
                     isAttackingWithAlly = false;
@@ -178,14 +188,11 @@ public class Mid extends Unit
     
     @Override
     public int getGoldReward() {
-        return MID_REWARD;
+        return MID_GOLD_REWARD; // Uses the constant from Unit class
     }
     
     @Override
     public int getXPReward() {
-        return MID_XP_REWARD;
+        return MID_XP_REWARD; // Uses the constant from Unit class
     }
-    
-    public static final int MID_REWARD = 35;
-    public static final int MID_XP_REWARD = 25;
 }

@@ -27,19 +27,8 @@ public class PlaneBomb extends SpecialSkill
      * Constructor for the PlaneBomb skill
      */
     public PlaneBomb() {
-        try {
-            animator = new Animator("images/plane");
-            animator.scale(150, 150);
-            animator.setSpeed(100);
-        } catch (Exception e) {
-            // Create a simple plane if animator fails
-            GreenfootImage planeImg = new GreenfootImage(150, 50);
-            planeImg.setColor(Color.GRAY);
-            planeImg.fillRect(0, 0, 150, 50);
-            planeImg.setColor(Color.DARK_GRAY);
-            planeImg.fillRect(0, 20, 50, 10);
-            setImage(planeImg);
-        }
+        animator = new Animator("images/plane");
+        animator.setSpeed(100);
     }
     
     /**
@@ -63,18 +52,15 @@ public class PlaneBomb extends SpecialSkill
     public void start() {
         World world = getWorld();
         if (world != null && !active) {
-            // Initialize plane position based on direction, but always start from the sides of the middle area
-            int middleX = world.getWidth() / 2;
-            int middleWidth = world.getWidth() / 3; // 1/3 of screen width for middle area
-            
+            // Initialize plane position based on direction, starting from the edge of the screen
             if (targetDirection > 0) {
-                // Left to right, start at the left edge of middle area
-                planeX = middleX - middleWidth / 2;
+                // Left to right, start at the left edge of screen
+                planeX = 0;
+                setRotation(0); // Make sure plane is facing right
             } else {
-                // Right to left, start at the right edge of middle area
-                planeX = middleX + middleWidth / 2;
-                // Flip the plane image if needed
-                setRotation(180);
+                // Right to left, start at the right edge of screen
+                planeX = world.getWidth();
+                setRotation(180); // Flip the plane to face left
             }
             planeY = 100; // Fly higher up for better visibility
             active = true;
@@ -101,7 +87,7 @@ public class PlaneBomb extends SpecialSkill
             }
             setLocation(planeX, planeY);
             
-            // Drop bombs only while in the middle area
+            // Only drop bombs in the middle area
             int middleX = world.getWidth() / 2;
             int middleWidth = world.getWidth() / 3;
             int leftBound = middleX - middleWidth / 2;
@@ -116,16 +102,18 @@ public class PlaneBomb extends SpecialSkill
                 }
             }
             
-            // Check if plane has exited the screen or middle area boundaries
-            if ((targetDirection > 0 && planeX >= rightBound + 100) || 
-                (targetDirection < 0 && planeX <= leftBound - 100)) {
+            // Check if plane has exited the screen
+            if ((targetDirection > 0 && planeX >= world.getWidth() + 100) || 
+                (targetDirection < 0 && planeX <= -100)) {
                 active = false;
+                // Remove the plane object from world when it's off-screen
+                setLocation(-200, -200); // Move off-screen before potentially removing
             }
         }
         
         // Always update bombs and explosions, even if plane is no longer active
         updateBombs(world);
-        updateExplosions();
+        updateExplosions(world);
     }
     
     /**
@@ -173,8 +161,6 @@ public class PlaneBomb extends SpecialSkill
                 continue;
             }
             
-            // Removed tower damage check
-            
             // Check if bomb hit ground or Y=600
             if (bomb.isAtGround(world)) {
                 // Create explosion
@@ -215,15 +201,12 @@ public class PlaneBomb extends SpecialSkill
                 unit.hitBySpecialSkill(bombDamage, ownerSide);
             }
         }
-        
-        // Removed tower damage section
     }
     
     /**
      * Update all active explosions
      */
-    private void updateExplosions() {
-        World world = getWorld();
+    private void updateExplosions(World world) {
         ArrayList<Explosion> explosionsToRemove = new ArrayList<Explosion>();
         
         for (Explosion explosion : explosions) {
@@ -298,6 +281,7 @@ public class PlaneBomb extends SpecialSkill
         private boolean completed = false;
         private int frame = 0;
         private final int MAX_FRAMES = 20;
+        private SimpleTimer explosionTimer = new SimpleTimer();
         
         public Explosion(int x, int y) {
             this.x = x;
@@ -305,6 +289,7 @@ public class PlaneBomb extends SpecialSkill
             try {
                 explosionAnimator = new Animator("images/explosion");
                 explosionAnimator.setSpeed(100);
+                explosionTimer.mark();
             } catch (Exception e) {
                 // Create a simple explosion if animator fails
                 GreenfootImage explosionImg = new GreenfootImage(100, 100);
@@ -316,6 +301,7 @@ public class PlaneBomb extends SpecialSkill
                 explosionImg.fillOval(35, 35, 30, 30);
                 setImage(explosionImg);
                 explosionAnimator = null;
+                explosionTimer.mark();
             }
         }
         
@@ -324,14 +310,15 @@ public class PlaneBomb extends SpecialSkill
                 // Update animation
                 setImage(explosionAnimator.getCurrentFrame());
                 
-                // Check if animation has completed one cycle
-                if (explosionAnimator.getImageIndex() == explosionAnimator.getSize() - 1 && !completed) {
+                // Check if animation has completed one cycle or if enough time has passed
+                if ((explosionAnimator.getImageIndex() == explosionAnimator.getSize() - 1) || 
+                    explosionTimer.millisElapsed() > 2000) { // Force completion after 2 seconds
                     completed = true;
                 }
             } else {
-                // Simple fading animation
+                // Simple fading animation with a timeout
                 frame++;
-                if (frame >= MAX_FRAMES) {
+                if (frame >= MAX_FRAMES || explosionTimer.millisElapsed() > 2000) {
                     completed = true;
                 } else {
                     // Fade out gradually

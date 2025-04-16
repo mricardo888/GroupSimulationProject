@@ -5,6 +5,7 @@ import java.util.ArrayList;
 /**
  * The game world where units spawn and battle.
  * Updated to make special skills spawn in the middle and not damage towers.
+ * Added sound support for background music and death sounds.
  */
 public class MyWorld extends World
 {
@@ -24,11 +25,6 @@ public class MyWorld extends World
     private static final int RAINING_ARROWS_COST = 300;
     private static final int PLANE_BOMB_COST = 400;
     private static final int LASER_BEAM_COST = 500;
-    
-    // XP rewards for defeating units
-    private static final int LOW_XP_REWARD = 10;
-    private static final int MID_XP_REWARD = 25;
-    private static final int HIGH_XP_REWARD = 50;
     
     // # of spawned units
     private int unitsSpawnedSide1 = 0;
@@ -91,6 +87,9 @@ public class MyWorld extends World
     // Game state
     private boolean gameEnded = false;
     
+    // Sound
+    private GreenfootSound backgroundMusic;
+    
     /**
      * Constructor for the game world.
      */
@@ -122,7 +121,13 @@ public class MyWorld extends World
         
         // Initial spawn
         spawnInitialUnits();
+        
+        // Initialize and play background music
+        backgroundMusic = new GreenfootSound("./sounds/background.mp3");
+        backgroundMusic.setVolume(70); // Set volume to 70%
+        backgroundMusic.playLoop(); // Play in a continuous loop
     }
+    
     /**
      * Set up UI elements like labels and buttons
      */
@@ -385,7 +390,7 @@ public class MyWorld extends World
      * Configure and activate the PlaneBomb skill
      */
     private void configurePlaneBomb(int side, int targetX, int targetY) {
-        // Configure plane to fly across the middle of the screen
+        // Configure plane to fly across the entire screen
         int direction;
         
         if (side == 1) {
@@ -398,7 +403,6 @@ public class MyWorld extends World
         
         planeBomb.setDirection(direction);
         planeBomb.setOwnerSide(side);
-        // The PlaneBomb class should be updated to target the middle area
         planeBomb.start();
     }
     
@@ -791,6 +795,11 @@ public class MyWorld extends World
         if (gameEnded) return; // Prevent multiple calls
         
         gameEnded = true;
+        
+        // Stop the background music
+        if (backgroundMusic != null) {
+            backgroundMusic.stop();
+        }
         
         // Determine the winning side
         int winningSide = (losingSide == 1) ? 2 : 1;

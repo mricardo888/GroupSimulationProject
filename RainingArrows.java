@@ -1,14 +1,12 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.List;
 
 /**
  * RainingArrows is a special skill that creates a barrage of arrows falling from the sky.
  * The arrows can damage enemies and create impact effects when hitting the ground.
  * Modified to spawn in the middle area and not damage towers.
- * 
- * @author Your Name 
- * @version 1.0
  */
 public class RainingArrows extends SpecialSkill
 {
@@ -118,8 +116,19 @@ public class RainingArrows extends SpecialSkill
         }
         
         // Always update arrows and impacts, even if the rain has stopped
-        updateArrows(world);
-        updateImpacts(world);
+        try {
+            updateArrows(world);
+        } catch (ConcurrentModificationException e) {
+            // If we get a concurrent modification exception, try again next frame
+            System.out.println("Caught ConcurrentModificationException in updateArrows");
+        }
+        
+        try {
+            updateImpacts(world);
+        } catch (ConcurrentModificationException e) {
+            // If we get a concurrent modification exception, try again next frame
+            System.out.println("Caught ConcurrentModificationException in updateImpacts");
+        }
     }
     
     /**
@@ -152,44 +161,61 @@ public class RainingArrows extends SpecialSkill
      * Update all active arrows
      */
     private void updateArrows(World world) {
+        // Create a copy of the arrows list to avoid ConcurrentModificationException
+        ArrayList<Arrow> arrowsCopy = new ArrayList<Arrow>(arrows);
         ArrayList<Arrow> arrowsToRemove = new ArrayList<Arrow>();
         
-        for (Arrow arrow : arrows) {
+        // Iterate through the copy of the list
+        for (Arrow arrow : arrowsCopy) {
+            // Skip if arrow is no longer in the world
+            if (arrow.getWorld() == null) {
+                arrowsToRemove.add(arrow);
+                continue;
+            }
+            
             arrow.update();
             
             // Check if arrow has hit a unit
             Unit hitUnit = arrow.checkUnitHit();
             if (hitUnit != null) {
-                // Damage the unit
-                hitUnit.hitBySpecialSkill(arrowDamage, ownerSide);
-                
-                // Create impact effect
-                ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
-                impacts.add(impact);
-                world.addObject(impact, impact.getX(), impact.getY());
-                
-                // Mark arrow for removal
-                arrowsToRemove.add(arrow);
-                world.removeObject(arrow);
+                try {
+                    // Damage the unit
+                    hitUnit.hitBySpecialSkill(arrowDamage, ownerSide);
+                    
+                    // Create impact effect
+                    ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
+                    impacts.add(impact);
+                    world.addObject(impact, impact.getX(), impact.getY());
+                    
+                    // Mark arrow for removal
+                    arrowsToRemove.add(arrow);
+                    world.removeObject(arrow);
+                } catch (Exception e) {
+                    // Silent fail if we can't remove the arrow
+                    arrowsToRemove.add(arrow);
+                }
                 continue; // Skip checking ground hit
             }
             
-            // Removed tower hit check - arrows no longer affect towers
-            
             // Check if arrow has hit the ground or Y=600
             if (arrow.isAtGround(world)) {
-                // Create impact effect
-                ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
-                impacts.add(impact);
-                world.addObject(impact, impact.getX(), impact.getY());
-                
-                // Mark arrow for removal
-                arrowsToRemove.add(arrow);
-                world.removeObject(arrow);
+                try {
+                    // Create impact effect
+                    ArrowImpact impact = new ArrowImpact(arrow.getX(), arrow.getY());
+                    impacts.add(impact);
+                    world.addObject(impact, impact.getX(), impact.getY());
+                    
+                    // Mark arrow for removal
+                    arrowsToRemove.add(arrow);
+                    world.removeObject(arrow);
+                } catch (Exception e) {
+                    // Silent fail if we can't remove the arrow
+                    arrowsToRemove.add(arrow);
+                }
             }
         }
         
-        // Remove arrows that hit the ground or units
+        // Remove arrows outside the loop
         arrows.removeAll(arrowsToRemove);
     }
     
@@ -197,17 +223,31 @@ public class RainingArrows extends SpecialSkill
      * Update all active impacts
      */
     private void updateImpacts(World world) {
+        // Create a copy of the impacts list to avoid ConcurrentModificationException
+        ArrayList<ArrowImpact> impactsCopy = new ArrayList<ArrowImpact>(impacts);
         ArrayList<ArrowImpact> impactsToRemove = new ArrayList<ArrowImpact>();
         
-        for (ArrowImpact impact : impacts) {
-            if (impact.update()) {
-                // If impact animation is complete, mark for removal
+        // Iterate through the copy of the list
+        for (ArrowImpact impact : impactsCopy) {
+            // Skip if impact is no longer in the world
+            if (impact.getWorld() == null) {
                 impactsToRemove.add(impact);
-                world.removeObject(impact);
+                continue;
+            }
+            
+            if (impact.update()) {
+                try {
+                    // If impact animation is complete, mark for removal
+                    impactsToRemove.add(impact);
+                    world.removeObject(impact);
+                } catch (Exception e) {
+                    // Silent fail if we can't remove the impact
+                    impactsToRemove.add(impact);
+                }
             }
         }
         
-        // Remove completed impacts
+        // Remove impacts outside the loop
         impacts.removeAll(impactsToRemove);
     }
     
@@ -219,6 +259,7 @@ public class RainingArrows extends SpecialSkill
         private int speed;
         private int angle; // Angle in degrees
         private double vx, vy; // Velocity components
+        private SimpleTimer existenceTimer = new SimpleTimer();
         
         public Arrow(int x, int y, int angle, int speed) {
             this.x = x;
@@ -233,6 +274,7 @@ public class RainingArrows extends SpecialSkill
             
             // Create arrow image
             createArrowImage();
+            existenceTimer.mark();
         }
         
         private void createArrowImage() {
@@ -275,7 +317,23 @@ public class RainingArrows extends SpecialSkill
             angle = (int) Math.toDegrees(Math.atan2(vy, vx));
             setRotation(angle);
             
-            setLocation(x, y);
+            try {
+                setLocation(x, y);
+            } catch (Exception e) {
+                // Handle possible exception if actor is removed
+            }
+            
+            // Time out after 5 seconds (safety check)
+            if (existenceTimer.millisElapsed() > 5000) {
+                try {
+                    World world = getWorld();
+                    if (world != null) {
+                        world.removeObject(this);
+                    }
+                } catch (Exception e) {
+                    // Silent fail if we can't remove the object
+                }
+            }
         }
         
         public int getX() {
@@ -288,7 +346,7 @@ public class RainingArrows extends SpecialSkill
         
         public boolean isAtGround(World world) {
             // Return true when Y >= 600 or at world bottom
-            return y >= 600 || y >= world.getHeight() - 10;
+            return y >= 600 || (world != null && y >= world.getHeight() - 10);
         }
         
         /**
@@ -296,14 +354,18 @@ public class RainingArrows extends SpecialSkill
          */
         public Unit checkUnitHit() {
             // Check for any intersecting units
-            List<Unit> units = getIntersectingObjects(Unit.class);
-            if (units != null && !units.isEmpty()) {
-                for (Unit unit : units) {
-                    // Only damage units from the opposite side
-                    if (unit.getSide() != ownerSide) {
-                        return unit;
+            try {
+                List<Unit> units = getIntersectingObjects(Unit.class);
+                if (units != null && !units.isEmpty()) {
+                    for (Unit unit : units) {
+                        // Only damage units from the opposite side
+                        if (unit.getSide() != ownerSide) {
+                            return unit;
+                        }
                     }
                 }
+            } catch (Exception e) {
+                // Handle possible exception if intersecting objects can't be retrieved
             }
             return null;
         }
@@ -317,6 +379,7 @@ public class RainingArrows extends SpecialSkill
         private int frame = 0;
         private final int MAX_FRAMES = 10;
         private boolean completed = false;
+        private SimpleTimer impactTimer = new SimpleTimer();
         
         public ArrowImpact(int x, int y) {
             this.x = x;
@@ -327,19 +390,25 @@ public class RainingArrows extends SpecialSkill
             img.setColor(new Color(200, 200, 200, 200));
             img.fillOval(0, 0, 20, 20);
             setImage(img);
+            impactTimer.mark();
         }
         
         public boolean update() {
             // Simple animation that fades out
             frame++;
-            if (frame >= MAX_FRAMES) {
+            if (frame >= MAX_FRAMES || impactTimer.millisElapsed() > 1000) {
                 completed = true;
             } else {
-                // Fade out the impact effect
-                GreenfootImage img = getImage();
-                int alpha = 200 - (frame * 20);
-                if (alpha > 0) {
-                    img.setTransparency(alpha);
+                try {
+                    // Fade out the impact effect
+                    GreenfootImage img = getImage();
+                    int alpha = 200 - (frame * 20);
+                    if (alpha > 0) {
+                        img.setTransparency(alpha);
+                    }
+                } catch (Exception e) {
+                    // Handle possible exception if image can't be modified
+                    completed = true;
                 }
             }
             
