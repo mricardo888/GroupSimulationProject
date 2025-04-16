@@ -17,7 +17,6 @@ public class PlaneBomb extends SpecialSkill
     private int bombDropRate = 60; // Drop a bomb every 60 acts
     private int bombTimer = 0;
     private int planeX, planeY;
-    private boolean active = false;
     private ArrayList<Bomb> bombs = new ArrayList<Bomb>();
     private ArrayList<Explosion> explosions = new ArrayList<Explosion>();
     private int ownerSide = 0; // Side that activated the skill
@@ -124,10 +123,8 @@ public class PlaneBomb extends SpecialSkill
             }
         }
         
-        // Update bombs
+        // Always update bombs and explosions, even if plane is no longer active
         updateBombs(world);
-        
-        // Update explosions
         updateExplosions();
     }
     

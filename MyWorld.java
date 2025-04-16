@@ -1,5 +1,6 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 import java.util.Random;
+import java.util.ArrayList;
 
 /**
  * The game world where units spawn and battle.
@@ -58,6 +59,9 @@ public class MyWorld extends World
     private RainingArrows rainingArrows;
     private PlaneBomb planeBomb;
     private LaserBeam laserBeam;
+    private SimpleTimer skillLabelTimer = new SimpleTimer();
+    private boolean isSkillMessageActive1 = false;
+    private boolean isSkillMessageActive2 = false;
     
     // Skill timers
     private int skillTimer1 = 0;
@@ -73,6 +77,8 @@ public class MyWorld extends World
     private Label ageLabel2;
     private Label killLabel1;
     private Label killLabel2;
+    private Label skillLabel1 = null;
+    private Label skillLabel2 = null;
 
     
     // Tower references
@@ -272,6 +278,7 @@ public class MyWorld extends World
             gold1 += 25;
             gold2 += 25;
         }
+        checkSkillMessages();
     }
 
     /**
@@ -281,16 +288,30 @@ public class MyWorld extends World
     private int decideSkillToUse(int age, int gold) {
         // Random chance to use any skill (70%)
         if (Greenfoot.getRandomNumber(100) < 70) {
-            // Choose the most powerful skill available for the age
-            // No gold requirement anymore
-            if (age >= 4) {
+            // Try to find the most powerful skill available for the age that's not already active
+            if (age >= 4 && !laserBeam.isActive()) {
                 return 4; // LaserBeam
-            } else if (age >= 3) {
+            } else if (age >= 3 && !planeBomb.isActive()) {
                 return 3; // PlaneBomb
-            } else if (age >= 2) {
+            } else if (age >= 2 && !rainingArrows.isActive()) {
                 return 2; // RainingArrows
-            } else if (age >= 1) {
+            } else if (age >= 1 && !meteor.isActive()) {
                 return 1; // Meteor
+            }
+            
+            // If all preferred skills are active, try any available one
+            if (age >= 1) {
+                // Try skills in random order to prevent always picking the same one
+                ArrayList<Integer> availableSkills = new ArrayList<Integer>();
+                if (age >= 4 && !laserBeam.isActive()) availableSkills.add(4);
+                if (age >= 3 && !planeBomb.isActive()) availableSkills.add(3);
+                if (age >= 2 && !rainingArrows.isActive()) availableSkills.add(2);
+                if (age >= 1 && !meteor.isActive()) availableSkills.add(1);
+                
+                if (!availableSkills.isEmpty()) {
+                    int index = Greenfoot.getRandomNumber(availableSkills.size());
+                    return availableSkills.get(index);
+                }
             }
         }
         return 0; // Don't use any skill this time
@@ -394,16 +415,24 @@ public class MyWorld extends World
         // Skills are now free - remove gold deduction
         switch (skillType) {
             case 4: // LaserBeam
-                configureLaserBeam(side, targetX, targetY);
+                if (!laserBeam.isActive()) {
+                    configureLaserBeam(side, targetX, targetY);
+                }
                 break;
             case 3: // PlaneBomb
-                configurePlaneBomb(side, targetX, targetY);
+                if (!planeBomb.isActive()) {
+                    configurePlaneBomb(side, targetX, targetY);
+                }
                 break;
             case 2: // RainingArrows
-                configureRainingArrows(side, targetX, targetY);
+                if (!rainingArrows.isActive()) {
+                    configureRainingArrows(side, targetX, targetY);
+                }
                 break;
             case 1: // Meteor
-                configureMeteor(side, targetX, targetY);
+                if (!meteor.isActive()) {
+                    configureMeteor(side, targetX, targetY);
+                }
                 break;
         }
     }
@@ -496,13 +525,44 @@ public class MyWorld extends World
         killThreshold2 = 5 + Greenfoot.getRandomNumber(6); // 5 to 10
     }
     
+    private void checkSkillMessages() {
+        // Check if we need to remove any skill activation messages
+        if (isSkillMessageActive1 && skillLabelTimer.millisElapsed() > 1500) {
+            if (skillLabel1 != null && skillLabel1.getWorld() != null) {
+                removeObject(skillLabel1);
+            }
+            isSkillMessageActive1 = false;
+        }
+        
+        if (isSkillMessageActive2 && skillLabelTimer.millisElapsed() > 1500) {
+            if (skillLabel2 != null && skillLabel2.getWorld() != null) {
+                removeObject(skillLabel2);
+            }
+            isSkillMessageActive2 = false;
+        }
+    }
+    
     // Method to track kills and potentially activate special skills
     public void recordKill(int killerSide) {
         if (killerSide == 1) {
             killCount1++;
             
+            // Update kill counter display
+            killLabel1.setValue("Kills: " + killCount1 + "/" + killThreshold1);
+            
             // Check if kill threshold reached
             if (killCount1 >= killThreshold1) {
+                // Add visual indicator
+                if (skillLabel1 != null && skillLabel1.getWorld() != null) {
+                    removeObject(skillLabel1);
+                }
+                
+                skillLabel1 = new Label("Player 1 Special Skill Activated!", 30);
+                skillLabel1.setFillColor(Color.YELLOW);
+                addObject(skillLabel1, getWidth()/2, 300);
+                isSkillMessageActive1 = true;
+                skillLabelTimer.mark(); // Start the timer
+                
                 // Activate a special skill based on the side's age
                 activateAgeBasedSkill(1);
                 
@@ -513,8 +573,22 @@ public class MyWorld extends World
         } else if (killerSide == 2) {
             killCount2++;
             
+            // Update kill counter display
+            killLabel2.setValue("Kills: " + killCount2 + "/" + killThreshold2);
+            
             // Check if kill threshold reached
             if (killCount2 >= killThreshold2) {
+                // Add visual indicator
+                if (skillLabel2 != null && skillLabel2.getWorld() != null) {
+                    removeObject(skillLabel2);
+                }
+                
+                skillLabel2 = new Label("Player 2 Special Skill Activated!", 30);
+                skillLabel2.setFillColor(Color.YELLOW);
+                addObject(skillLabel2, getWidth()/2, 300);
+                isSkillMessageActive2 = true;
+                skillLabelTimer.mark(); // Start the timer
+                
                 // Activate a special skill based on the side's age
                 activateAgeBasedSkill(2);
                 
@@ -524,6 +598,29 @@ public class MyWorld extends World
             }
         }
     }
+
+    
+    
+    /**
+     * Check if a particular skill is currently active
+     * @param skillType 1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam
+     * @return true if the skill is active
+     */
+    public boolean isSkillActive(int skillType) {
+        switch (skillType) {
+            case 4: // LaserBeam
+                return laserBeam.isActive();
+            case 3: // PlaneBomb
+                return planeBomb.isActive();
+            case 2: // RainingArrows
+                return rainingArrows.isActive();
+            case 1: // Meteor
+                return meteor.isActive();
+            default:
+                return false;
+        }
+    }
+
     
     // Method to activate an appropriate skill based on the side's age
     private void activateAgeBasedSkill(int side) {
@@ -565,18 +662,6 @@ public class MyWorld extends World
     private void side1() {
         int unitCount = countUnits(1);
         
-        // Allow skill activation with no gold requirement
-        // Higher chance to use skills in higher ages
-        int useSkillChance = 5 + (age1 * 5); // 10% in Age 1, 15% in Age 2, etc.
-        
-        if (Greenfoot.getRandomNumber(100) < useSkillChance) {
-            int skillChoice = decideSkillToUse(age1, gold1);
-            if (skillChoice > 0) {
-                useSkill(1, skillChoice);
-                return;
-            }
-        }
-        
         // Focus on spawning units
         // If we have enough gold for a High unit, occasionally spawn one
         if (gold1 >= HIGH_COST + (30 * age1) && Greenfoot.getRandomNumber(100) < 20) {
@@ -600,18 +685,6 @@ public class MyWorld extends World
     private void side2() {
         int unitCount = countUnits(2);
         
-        // Allow skill activation with no gold requirement
-        // Higher chance to use skills in higher ages
-        int useSkillChance = 5 + (age2 * 5); // 10% in Age 1, 15% in Age 2, etc.
-        
-        if (Greenfoot.getRandomNumber(100) < useSkillChance) {
-            int skillChoice = decideSkillToUse(age2, gold2);
-            if (skillChoice > 0) {
-                useSkill(2, skillChoice);
-                return;
-            }
-        }
-        
         // Focus on spawning units
         // If we have enough gold for a High unit, occasionally spawn one
         if (gold2 >= HIGH_COST + (30 * age2) && Greenfoot.getRandomNumber(100) < 20) {
@@ -631,6 +704,7 @@ public class MyWorld extends World
             unitsSpawnedSide2++;
         }
     }
+
 
     private int decideUnitToSpawn(int gold, int age, int unitCount) {
         int highCost = HIGH_COST + (30 * age);

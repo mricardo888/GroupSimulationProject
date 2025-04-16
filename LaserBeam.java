@@ -11,7 +11,6 @@ public class LaserBeam extends SpecialSkill
     private Animator laserGunAnimator;
     private int shootingDelay = 15; // Time between laser shots
     private int shootTimer = 0;
-    private boolean active = false;
     private int gunX, gunY;
     private int shotsRemaining = 5; // Number of laser shots to fire
     private ArrayList<Beam> beams = new ArrayList<Beam>();
@@ -92,10 +91,8 @@ public class LaserBeam extends SpecialSkill
             }
         }
         
-        // Update beams
+        // Always update beams and impacts, even if the laser has stopped firing
         updateBeams(world);
-        
-        // Update impacts
         updateImpacts(world);
     }
     

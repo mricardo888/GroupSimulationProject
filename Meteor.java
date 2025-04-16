@@ -14,7 +14,6 @@ public class Meteor extends SpecialSkill
     private int spawnRate = 50; // Time between meteor spawns
     private int spawnTimer = 0;
     private int meteorsRemaining = 10; // Default number of meteors to spawn
-    private boolean active = false;
     private int minSize = 20; // Minimum meteor size
     private int maxSize = 60; // Maximum meteor size
     private int minSpeed = 2; // Minimum falling speed
@@ -114,10 +113,8 @@ public class Meteor extends SpecialSkill
             }
         }
         
-        // Update meteors
+        // Always update meteors and impacts, even if no new meteors are spawning
         updateMeteors(world);
-        
-        // Update impacts
         updateImpacts(world);
     }
     

@@ -17,7 +17,6 @@ public class RainingArrows extends SpecialSkill
     private int spawnRate = 5; // Time between arrow spawns (lower = more frequent)
     private int spawnTimer = 0;
     private int arrowsRemaining = 50; // Default number of arrows to spawn
-    private boolean active = false;
     private int arrowSpeed = 6; // Falling speed
     private int coverage = 80; // Percentage of screen width covered by arrows
     private int duration = 150; // Duration of the effect in acts
@@ -118,10 +117,8 @@ public class RainingArrows extends SpecialSkill
             }
         }
         
-        // Update arrows
+        // Always update arrows and impacts, even if the rain has stopped
         updateArrows(world);
-        
-        // Update impacts
         updateImpacts(world);
     }
     
