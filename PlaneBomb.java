@@ -27,19 +27,8 @@ public class PlaneBomb extends SpecialSkill
      * Constructor for the PlaneBomb skill
      */
     public PlaneBomb() {
-        try {
-            animator = new Animator("images/plane");
-            animator.scale(150, 150);
-            animator.setSpeed(100);
-        } catch (Exception e) {
-            // Create a simple plane if animator fails
-            GreenfootImage planeImg = new GreenfootImage(150, 50);
-            planeImg.setColor(Color.GRAY);
-            planeImg.fillRect(0, 0, 150, 50);
-            planeImg.setColor(Color.DARK_GRAY);
-            planeImg.fillRect(0, 20, 50, 10);
-            setImage(planeImg);
-        }
+        animator = new Animator("images/plane");
+        animator.setSpeed(100);
     }
     
     /**
