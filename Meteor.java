@@ -1,5 +1,6 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -150,7 +151,16 @@ public class Meteor extends SpecialSkill
     private void updateMeteors(World world) {
         ArrayList<MeteorObject> meteorsToRemove = new ArrayList<MeteorObject>();
         
-        for (MeteorObject meteor : meteors) {
+        // Use Iterator to avoid ConcurrentModificationException
+        for (Iterator<MeteorObject> iterator = meteors.iterator(); iterator.hasNext();) {
+            MeteorObject meteor = iterator.next();
+            
+            // Check if meteor still exists in the world
+            if (meteor.getWorld() == null) {
+                meteorsToRemove.add(meteor);
+                continue;
+            }
+            
             meteor.update();
             
             // Get current location for accurate collision check
@@ -200,7 +210,16 @@ public class Meteor extends SpecialSkill
     private void updateImpacts(World world) {
         ArrayList<MeteorImpact> impactsToRemove = new ArrayList<MeteorImpact>();
         
-        for (MeteorImpact impact : impacts) {
+        // Use Iterator to avoid ConcurrentModificationException
+        for (Iterator<MeteorImpact> iterator = impacts.iterator(); iterator.hasNext();) {
+            MeteorImpact impact = iterator.next();
+            
+            // Check if impact still exists in the world
+            if (impact.getWorld() == null) {
+                impactsToRemove.add(impact);
+                continue;
+            }
+            
             if (impact.update()) {
                 // If impact animation is complete, mark for removal
                 impactsToRemove.add(impact);
@@ -246,6 +265,7 @@ public class Meteor extends SpecialSkill
         private int rotation = 0;
         private int rotationSpeed;
         private int side;  // Added this to track which side the meteor belongs to
+        private SimpleTimer existenceTimer = new SimpleTimer();
         
         public MeteorObject(int x, int y, int size, int speed) {
             this.x = x;
@@ -253,6 +273,7 @@ public class Meteor extends SpecialSkill
             this.size = size;
             this.speed = speed;
             this.rotationSpeed = Greenfoot.getRandomNumber(5) + 1; // Random rotation speed
+            existenceTimer.mark();
             
             // Create meteor image
             createMeteorImage();
@@ -318,6 +339,18 @@ public class Meteor extends SpecialSkill
             setRotation(rotation);
             
             setLocation(x, y);
+            
+            // Safety timeout - if meteor exists for more than 10 seconds, remove it
+            if (existenceTimer.millisElapsed() > 10000) {
+                try {
+                    World world = getWorld();
+                    if (world != null) {
+                        world.removeObject(this);
+                    }
+                } catch (Exception e) {
+                    // Silent fail if we can't remove the object
+                }
+            }
         }
         
         public int getX() {
@@ -362,11 +395,13 @@ public class Meteor extends SpecialSkill
         private boolean completed = false;
         private int frame = 0;
         private final int MAX_FRAMES = 20;
+        private SimpleTimer impactTimer = new SimpleTimer();
         
         public MeteorImpact(int x, int y, int size) {
             this.x = x;
             this.y = y;
             this.size = size;
+            impactTimer.mark();
             
             // Use the explosion spritesheet for the impact
             try {
@@ -390,14 +425,15 @@ public class Meteor extends SpecialSkill
                 // Update animation using the explosion spritesheet
                 setImage(impactAnimator.getCurrentFrame());
                 
-                // Check if animation has completed one cycle
-                if (impactAnimator.getImageIndex() == impactAnimator.getSize() - 1 && !completed) {
+                // Check if animation has completed one cycle OR if too much time has passed
+                if ((impactAnimator.getImageIndex() == impactAnimator.getSize() - 1) || 
+                    impactTimer.millisElapsed() > 3000) { // Force completion after 3 seconds
                     completed = true;
                 }
             } else {
                 // Simple animation that fades out
                 frame++;
-                if (frame >= MAX_FRAMES) {
+                if (frame >= MAX_FRAMES || impactTimer.millisElapsed() > 3000) {
                     completed = true;
                 } else {
                     // Fade out gradually
