@@ -508,7 +508,7 @@ public class MyWorld extends World
         int playerAge = (side == 1) ? age1 : age2;
         switch (playerAge) {
             case 1: return "Stone Age";
-            case 2: return "Cave Age";
+            case 2: return "Middle Age";
             case 3: return "Modern Age";
             case 4: return "Space Age";
             default: return "Unknown Age";
