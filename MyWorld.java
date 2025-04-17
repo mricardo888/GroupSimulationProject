@@ -89,6 +89,7 @@ public class MyWorld extends World
     
     // Sound
     private GreenfootSound backgroundMusic;
+    private boolean first;
     
     /**
      * Constructor for the game world.
@@ -125,7 +126,6 @@ public class MyWorld extends World
         // Initialize and play background music
         backgroundMusic = new GreenfootSound("./sounds/background.mp3");
         backgroundMusic.setVolume(70); // Set volume to 70%
-        backgroundMusic.playLoop(); // Play in a continuous loop
     }
     
     /**
@@ -246,7 +246,14 @@ public class MyWorld extends World
      */
     public void act() {
         // Skip if game has ended
-        if (gameEnded) return;
+        if (first == false) {
+            first = true;
+            backgroundMusic.playLoop(); // Play in a continuous loop
+        }
+        
+        if (gameEnded) {
+            backgroundMusic.stop();
+        }
         
         // Update gold display
         goldLabel1.setValue("Gold: " + gold1);
