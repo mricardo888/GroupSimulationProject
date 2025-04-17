@@ -212,7 +212,7 @@ public abstract class Unit extends SuperSmoothMover
             // Side 2 units have direction -1 (right to left)
             if (direction == 1) { // If side 1 unit died, award to side 2
                 // Calculate gold reward based on unit type and scale by unit's age
-                int goldReward = getGoldReward() * age;
+                int goldReward = getCost() * 2;
                 world.addGold(2, goldReward);
                 
                 // Calculate XP based on:
@@ -228,7 +228,7 @@ public abstract class Unit extends SuperSmoothMover
                 world.recordKill(2); // Record a kill for side 2
             } else { // If side 2 unit died, award to side 1
                 // Calculate gold reward based on unit type and scale by unit's age
-                int goldReward = getGoldReward() * age;
+                int goldReward = getCost() * 2;
                 world.addGold(1, goldReward);
                 
                 // Calculate XP based on:

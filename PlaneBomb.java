@@ -14,7 +14,7 @@ public class PlaneBomb extends SpecialSkill
 {
     private Animator animator;
     private int planeSpeed = 3;
-    private int bombDropRate = 60; // Drop a bomb every 60 acts
+    private int bombDropRate = 30; // Drop a bomb every 60 acts
     private int bombTimer = 0;
     private int planeX, planeY;
     private ArrayList<Bomb> bombs = new ArrayList<Bomb>();
