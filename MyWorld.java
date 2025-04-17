@@ -32,9 +32,9 @@ public class MyWorld extends World
     private static final int UNITS_BEFORE_SKILLS = 25;
     
     // XP thresholds for advancing to next age
-    private static final int AGE_2_XP_THRESHOLD = 100;
-    private static final int AGE_3_XP_THRESHOLD = 300;
-    private static final int AGE_4_XP_THRESHOLD = 700;
+    private static final int AGE_2_XP_THRESHOLD = 300;
+    private static final int AGE_3_XP_THRESHOLD = 1000;
+    private static final int AGE_4_XP_THRESHOLD = 2000;
     private int unitCountThreshold = 25;
     
     // Add kill counters and trigger threshold
