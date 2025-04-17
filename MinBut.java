@@ -13,6 +13,7 @@ public class MinBut extends Buttons
     private int xp1;
     private int xp2;
     private int which;
+    private boolean isZero = false;
     
     public MinBut(GreenfootImage e, int x){
         super(e);
@@ -28,22 +29,32 @@ public class MinBut extends Buttons
     public void minGold1(){
         Settings s = (Settings)getWorld();
         g1 = s.getGold1();
-        s.setGold1(g1 - 10);
+        if (!(g1 == 0)){
+            s.setGold1(g1 - 10);
+        }
+        
+
     }
     public void minGold2(){
         Settings s = (Settings)getWorld();
         g2 = s.getGold2();
-        s.setGold2(g2 - 10);
+        if (!(g2 == 0)){
+            s.setGold2(g2 - 10);
+        }
     }
     public void minXp1(){
         Settings s = (Settings)getWorld();
         xp1 = s.getXp1();
-        s.setXp1(xp1 - 10);
+        if (!(xp1 == 0)){
+            s.setXp1(xp1 - 10);
+        }
     }
     public void minXp2(){
         Settings s = (Settings)getWorld();
         xp2 = s.getXp2();
-        s.setXp2(xp2 - 10);
+        if (!(xp2 == 0)){
+            s.setXp2(xp2 - 10);
+        }
     }
     
     public void which(){
