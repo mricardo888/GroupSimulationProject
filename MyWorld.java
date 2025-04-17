@@ -368,8 +368,6 @@ public class MyWorld extends World
         int startX = getWidth() / 2; // Middle of screen
         int startY = 0; // Top of the screen
         
-        // LaserBeam now fires vertically from top to bottom
-        laserBeam.setGunPosition(startX, startY);
         laserBeam.setShots(8); // Increased shot count for better coverage
         laserBeam.setOwnerSide(side);
         laserBeam.start();

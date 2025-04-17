@@ -39,13 +39,6 @@ public class LaserBeam extends SpecialSkill
     }
     
     /**
-     * Set the position and target area for the laser beam
-     */
-    public void setGunPosition(int x, int y) {
-        // Just used to maintain compatibility with old code - not actually used
-    }
-    
-    /**
      * Start shooting laser beams
      */
     public void start() {
