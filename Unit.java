@@ -4,6 +4,7 @@ import java.io.File;
 
 /**
  * The base class for all units in the game.
+ * Modified to prevent special skills from contributing to kill count.
  */
 public abstract class Unit extends SuperSmoothMover
 {
@@ -25,6 +26,7 @@ public abstract class Unit extends SuperSmoothMover
     protected HPBar hpBar; // Reference to the HP bar
     protected GreenfootSound deathSound; // Sound to play when unit dies
     private boolean hasDealtDamageThisCycle = false; // Flag to track if damage was dealt in current animation cycle
+    protected boolean killedBySpecialSkill = false; // Flag to track if unit was killed by special skill
     
     // XP rewards constants - these match the MyWorld constants
     public static final int LOW_XP_REWARD = 10;
@@ -107,8 +109,12 @@ public abstract class Unit extends SuperSmoothMover
                 // Play death sound
                 deathSound.play();
                 
-                // Award gold and XP
-                awardRewards();
+                // Award gold and XP - check if killed by special skill
+                if (killedBySpecialSkill) {
+                    awardRewardsWithoutKill(); // Don't increment kill counter for special skill kills
+                } else {
+                    awardRewards(); // Normal kill counter incrementing
+                }
                 
                 // Then remove the unit
                 getWorld().removeObject(this);
@@ -195,13 +201,19 @@ public abstract class Unit extends SuperSmoothMover
         setImage(deathAnimation.getCurrentFrame());
         if (deathAnimation.getImageIndex() + 1 == deathAnimation.getSize()) {
             // Award gold and XP to the opponent when a unit dies
-            awardRewards();
+            // Check if killed by special skill
+            if (killedBySpecialSkill) {
+                awardRewardsWithoutKill(); // Don't increment kill counter for special skill kills
+            } else {
+                awardRewards(); // Normal kill counter incrementing
+            }
             getWorld().removeObject(this);
         }
     }
     
     /**
      * Award gold and XP rewards to the opponent
+     * This method also increments the kill counter
      */
     protected void awardRewards() {
         if (getWorld() instanceof MyWorld) {
@@ -246,8 +258,57 @@ public abstract class Unit extends SuperSmoothMover
         }
     }
     
+    /**
+     * Award gold and XP rewards to the opponent WITHOUT incrementing kill counter
+     * This is used for kills by special skills
+     */
+    protected void awardRewardsWithoutKill() {
+        if (getWorld() instanceof MyWorld) {
+            MyWorld world = (MyWorld) getWorld();
+            
+            // Award gold and XP to the opposite side based on direction
+            // Side 1 units have direction 1 (left to right)
+            // Side 2 units have direction -1 (right to left)
+            if (direction == 1) { // If side 1 unit died, award to side 2
+                // Calculate gold reward based on unit type and scale by unit's age
+                int goldReward = getCost() * 2;
+                world.addGold(2, goldReward);
+                
+                // Calculate XP based on:
+                // 1. Base XP determined by unit type (Low, Mid, High)
+                // 2. Multiplied by the unit's age
+                // 3. Multiplied by the killer's age
+                int killerAge = world.getPlayerAge(2);
+                int baseXP = getXPReward();
+                int totalXP = baseXP * age * killerAge;
+                
+                // Award the calculated XP
+                world.addXP(2, totalXP);
+                // DO NOT record a kill - this is the key difference from awardRewards()
+            } else { // If side 2 unit died, award to side 1
+                // Calculate gold reward based on unit type and scale by unit's age
+                int goldReward = getCost() * 2;
+                world.addGold(1, goldReward);
+                
+                // Calculate XP based on:
+                // 1. Base XP determined by unit type (Low, Mid, High)
+                // 2. Multiplied by the unit's age
+                // 3. Multiplied by the killer's age
+                int killerAge = world.getPlayerAge(1);
+                int baseXP = getXPReward();
+                int totalXP = baseXP * age * killerAge;
+                
+                // Award the calculated XP
+                world.addXP(1, totalXP);
+                // DO NOT record a kill - this is the key difference from awardRewards()
+            }
+        }
+    }
+    
     public void attack(int damage) {
         hp -= damage;
+        // Regular attacks, not flagged as special skill kill
+        killedBySpecialSkill = false;
     }
     
     public int getDirection() {
@@ -270,14 +331,15 @@ public abstract class Unit extends SuperSmoothMover
             // Apply damage
             hp -= damage;
             
-            // If killed by special skill, still award rewards
+            // Flag that this unit was killed by a special skill
             if (hp <= 0) {
+                killedBySpecialSkill = true;
+                
                 // Play death sound
                 deathSound.play();
                 
-                // The unit will be removed in the next act cycle
-                // But we need to award rewards immediately
-                awardRewards();
+                // No need to call awardRewardsWithoutKill() here
+                // The act() or death() methods will handle that using our killedBySpecialSkill flag
             }
         }
     }
