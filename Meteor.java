@@ -194,6 +194,10 @@ public class Meteor extends SpecialSkill
                 // Damage units in the impact area
                 damageUnitsInArea(world, meteor.getX(), meteor.getY(), meteor.getSize() * 2);
                 
+                // Play explode sound
+                GreenfootSound explode = new GreenfootSound("./sounds/explosion.mp3");
+                explode.play();
+                
                 // Mark meteor for removal
                 meteorsToRemove.add(meteor);
                 world.removeObject(meteor);

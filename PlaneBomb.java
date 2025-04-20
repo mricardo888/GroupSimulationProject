@@ -123,6 +123,9 @@ public class PlaneBomb extends SpecialSkill
         Bomb bomb = new Bomb(planeX, planeY + 30);
         bombs.add(bomb);
         world.addObject(bomb, bomb.getX(), bomb.getY());
+        // Play Bomb dropping sound
+        GreenfootSound bombDrop = new GreenfootSound("./sounds/bombsFalling.mp3");
+        bombDrop.play();
     }
     
     /**
@@ -286,23 +289,11 @@ public class PlaneBomb extends SpecialSkill
         public Explosion(int x, int y) {
             this.x = x;
             this.y = y;
-            try {
-                explosionAnimator = new Animator("images/explosion");
-                explosionAnimator.setSpeed(100);
-                explosionTimer.mark();
-            } catch (Exception e) {
-                // Create a simple explosion if animator fails
-                GreenfootImage explosionImg = new GreenfootImage(100, 100);
-                explosionImg.setColor(new Color(255, 140, 0, 180)); // Orange with transparency
-                explosionImg.fillOval(0, 0, 100, 100);
-                explosionImg.setColor(new Color(255, 69, 0, 150)); // Red-orange with transparency
-                explosionImg.fillOval(20, 20, 60, 60);
-                explosionImg.setColor(new Color(255, 255, 0, 200)); // Yellow with transparency
-                explosionImg.fillOval(35, 35, 30, 30);
-                setImage(explosionImg);
-                explosionAnimator = null;
-                explosionTimer.mark();
-            }
+            explosionAnimator = new Animator("images/explosion");
+            explosionAnimator.setSpeed(100);
+            explosionTimer.mark();
+            GreenfootSound explosionSound = new GreenfootSound("./sounds/explode.mp3");
+            explosionSound.play();
         }
         
         public boolean update() {
