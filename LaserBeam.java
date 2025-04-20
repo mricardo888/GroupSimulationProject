@@ -324,6 +324,8 @@ public class LaserBeam extends SpecialSkill
             impactImg.fillOval(5, 5, 10, 10);
             setImage(impactImg);
             impactTimer.mark();
+            GreenfootSound impactSound = new GreenfootSound("laserGun.mp3");
+            impactSound.play();
         }
         
         public boolean update() {

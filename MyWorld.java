@@ -6,6 +6,7 @@ import java.util.ArrayList;
  * The game world where units spawn and battle.
  * Updated to make special skills spawn in the middle and not damage towers.
  * Added sound support for background music and death sounds.
+ * Added unit limit per side.
  */
 public class MyWorld extends World
 {
@@ -19,6 +20,9 @@ public class MyWorld extends World
     private static final int LOW_COST = 30;
     private static final int MID_COST = 70;
     private static final int HIGH_COST = 130;
+    
+    // Maximum number of units per side
+    private static final int MAX_UNITS_PER_SIDE = 8;
     
     // Special skill costs (kept for reference but no longer used for deducting gold)
     private static final int METEOR_COST = 200;
@@ -75,6 +79,8 @@ public class MyWorld extends World
     private Label killLabel2;
     private Label skillLabel1 = null;
     private Label skillLabel2 = null;
+    private Label unitCountLabel1; // Added label to display unit count
+    private Label unitCountLabel2; // Added label to display unit count
 
     
     // Tower references
@@ -197,6 +203,12 @@ public class MyWorld extends World
         killLabel2 = new Label("Kills: 0/" + killThreshold2, 20);
         addObject(killLabel1, 150, 180);
         addObject(killLabel2, getWidth() - 150, 180);
+        
+        // Add unit counter displays
+        unitCountLabel1 = new Label("Units: 0/" + MAX_UNITS_PER_SIDE, 20);
+        unitCountLabel2 = new Label("Units: 0/" + MAX_UNITS_PER_SIDE, 20);
+        addObject(unitCountLabel1, 150, 210);
+        addObject(unitCountLabel2, getWidth() - 150, 210);
     }
     
     /**
@@ -267,6 +279,12 @@ public class MyWorld extends World
         killLabel1.setValue("Kills: " + killCount1 + "/" + killThreshold1);
         killLabel2.setValue("Kills: " + killCount2 + "/" + killThreshold2);
         
+        // Update unit counter display
+        int unitCount1 = countUnits(1);
+        int unitCount2 = countUnits(2);
+        unitCountLabel1.setValue("Units: " + unitCount1 + "/" + MAX_UNITS_PER_SIDE);
+        unitCountLabel2.setValue("Units: " + unitCount2 + "/" + MAX_UNITS_PER_SIDE);
+        
         // Check if any side can advance to the next age
         checkAgeAdvancement();
         
@@ -329,6 +347,9 @@ public class MyWorld extends World
         return 0; // Don't use any skill this time
     }
     
+    /**
+     * Count the number of units for a specific side
+     */
     private int countUnits(int side) {
         int count = 0;
         for (Unit unit : getObjects(Unit.class)) {
@@ -671,6 +692,11 @@ public class MyWorld extends World
     private void side1() {
         int unitCount = countUnits(1);
         
+        // Only spawn if below the unit limit
+        if (unitCount >= MAX_UNITS_PER_SIDE) {
+            return; // Skip spawning if at or above the limit
+        }
+        
         // Focus on spawning units
         // If we have enough gold for a High unit, occasionally spawn one
         if (gold1 >= HIGH_COST + (30 * age1) && Greenfoot.getRandomNumber(100) < 20) {
@@ -693,6 +719,11 @@ public class MyWorld extends World
     
     private void side2() {
         int unitCount = countUnits(2);
+        
+        // Only spawn if below the unit limit
+        if (unitCount >= MAX_UNITS_PER_SIDE) {
+            return; // Skip spawning if at or above the limit
+        }
         
         // Focus on spawning units
         // If we have enough gold for a High unit, occasionally spawn one
@@ -743,6 +774,12 @@ public class MyWorld extends World
     }
     
     private void spawnUnitBySide(int side, int unitType) {
+        // First check if we're below the unit limit
+        int unitCount = countUnits(side);
+        if (unitCount >= MAX_UNITS_PER_SIDE) {
+            return; // Don't spawn if at or above the limit
+        }
+        
         // Fix: Assign the correct direction based on side
         int direction = (side == 1) ? 1 : -1;  // Side 1 moves left to right, Side 2 moves right to left
         Unit unit = null;
@@ -780,6 +817,12 @@ public class MyWorld extends World
     }
     
     private void spawnUnit(int side, int direction) {
+        // First check if we're below the unit limit
+        int unitCount = countUnits(side);
+        if (unitCount >= MAX_UNITS_PER_SIDE) {
+            return; // Don't spawn if at or above the limit
+        }
+        
         int playerAge = getPlayerAge(side);
         Unit unit = new Low(playerAge, 100, direction);
         if (side == 1) {

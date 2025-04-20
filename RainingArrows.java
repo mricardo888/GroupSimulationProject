@@ -187,6 +187,10 @@ public class RainingArrows extends SpecialSkill
                     impacts.add(impact);
                     world.addObject(impact, impact.getX(), impact.getY());
                     
+                    // Play ArrowWoosh sound
+                    GreenfootSound arrowSound = new GreenfootSound("./sounds/ArrowWhoosh.wav");
+                    arrowSound.play();
+                    
                     // Mark arrow for removal
                     arrowsToRemove.add(arrow);
                     world.removeObject(arrow);
