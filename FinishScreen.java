@@ -1,15 +1,14 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 
 /**
- * The FinishScreen is displayed when the game ends.
- * It shows which player won and provides buttons to play again or return to start screen.
+ * The FinishScreen is displayed when the game ends
+ * 
+ * @author Mark Huang
  */
 public class FinishScreen extends World
 {
     /**
-     * Constructor for objects of class FinishScreen.
-     * 
-     * @param winner The side that won (1 or 2)
+     * Constructor for the FinishScreen
      */
     public FinishScreen(int winner)
     {    
@@ -43,39 +42,23 @@ public class FinishScreen extends World
         addObject(winnerLabel, getWidth()/2, 200);
         
         // Create play again button
-        try {
-            GreenfootImage playAgain = new GreenfootImage("play.png");
-            playAgain.scale((int)(playAgain.getWidth() * 0.8), (int)(playAgain.getHeight() * 0.8));
-            NextBut playAgainButton = new NextBut(playAgain, new MyWorld());
-            addObject(playAgainButton, getWidth()/2, 400);
-        } catch (Exception e) {
-            // If image isn't available, create a text-based button
-            Label playAgainLabel = new Label("Play Again", 40);
-            playAgainLabel.setFillColor(Color.GREEN);
-            addObject(playAgainLabel, getWidth()/2, 400);
-            // This doesn't function as a button, but at least shows the option
-        }
+        GreenfootImage playAgain = new GreenfootImage("./images/play.png");
+        playAgain.scale((int)(playAgain.getWidth() * 0.8), (int)(playAgain.getHeight() * 0.8));
+        NextBut playAgainButton = new NextBut(playAgain, new MyWorld());
+        addObject(playAgainButton, getWidth()/2, 400);
         
         // Create return to start screen button
-        try {
-            GreenfootImage returnToStart = new GreenfootImage("back.png");
-            returnToStart.scale((int)(returnToStart.getWidth() * 0.8), (int)(returnToStart.getHeight() * 0.8));
-            NextBut returnButton = new NextBut(returnToStart, new StartScreen());
-            addObject(returnButton, getWidth()/2, 500);
-        } catch (Exception e) {
-            // If image isn't available, create a text-based button
-            Label returnLabel = new Label("Return to Menu", 40);
-            returnLabel.setFillColor(Color.RED);
-            addObject(returnLabel, getWidth()/2, 500);
-            // This doesn't function as a button, but at least shows the option
-        }
+        GreenfootImage returnToStart = new GreenfootImage("./images/back.png");
+        returnToStart.scale((int)(returnToStart.getWidth() * 0.8), (int)(returnToStart.getHeight() * 0.8));
+        NextBut returnButton = new NextBut(returnToStart, new StartScreen());
+        addObject(returnButton, getWidth()/2, 500);
         
         // Add some decorative elements
         decorateScreen(winner);
     }
     
     /**
-     * Default constructor - used when no winner is specified
+     * Default constructor for the FinishScreen
      */
     public FinishScreen()
     {

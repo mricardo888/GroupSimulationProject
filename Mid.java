@@ -1,8 +1,9 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * Mid tier unit.
- * Can now attack the same enemy as the unit in front of it is attacking.
+ * Mid tier unit with balanced damage and speed
+ * 
+ * @author Ricardo Lee
  */
 public class Mid extends Unit
 {
@@ -11,14 +12,21 @@ public class Mid extends Unit
     private Unit targetEnemy = null;
     private boolean hasDealtDamageThisCycle = false;
     
+    /**
+     * Constructor for the Mid tier unit
+     */
     public Mid(int age, int hp, int direction) {
         super(age, hp, direction, "mid");
         
-        // Set specific attributes for Mid unit
         setAttackDamage(10);
         changeSpeed(1.0);
     }
     
+    /**
+     * The act method, overriding superclass act as it 
+     * can attack one unit behind the attacking unit
+     * of the side
+     */
     @Override
     public void act()
     {
@@ -27,9 +35,7 @@ public class Mid extends Unit
             if (deathAnimation != null) {
                 death();
             } else {
-                // If no death animation, still award gold and XP
                 awardRewards();
-                // Then remove the unit
                 getWorld().removeObject(this);
             }
             return;
@@ -54,8 +60,6 @@ public class Mid extends Unit
             // No friendly unit ahead that's attacking
             isAttackingWithAlly = false;
             targetEnemy = null;
-            
-            // Standard behavior - look for enemies to attack
             standardAttackBehavior();
         }
         
@@ -80,9 +84,6 @@ public class Mid extends Unit
         }
     }
     
-    /**
-     * Standard attack behavior - looking for enemies or towers in range
-     */
     private void standardAttackBehavior() {
         // Look for enemies to attack
         Unit enemy = enemyInRange(attackRange);
@@ -104,9 +105,6 @@ public class Mid extends Unit
         }
     }
     
-    /**
-     * Try to find what enemy the unit ahead is attacking
-     */
     private Unit findEnemyTarget(Unit friendlyUnit) {
         // Get all enemy units in the area
         java.util.List<Unit> enemies = getObjectsInRange(attackRange * 2, Unit.class);
@@ -130,10 +128,6 @@ public class Mid extends Unit
         return null; // No target found
     }
     
-    /**
-     * Perform attack when supporting an ally in front
-     * This attack has reduced cooldown but same damage
-     */
     private void performAttackWithAlly() {
         // Get the current attack frame
         setImage(attackAnimation.getCurrentFrame());
@@ -181,18 +175,27 @@ public class Mid extends Unit
         }
     }
     
+    /**
+     * Gets unit cost
+     */
     @Override
     public int getCost() {
         return COST + (30 * age);
     }
     
+    /**
+     * Gets unit gold reward
+     */
     @Override
     public int getGoldReward() {
-        return MID_GOLD_REWARD; // Uses the constant from Unit class
+        return MID_GOLD_REWARD;
     }
     
+    /**
+     * Gets unit XP reward
+     */
     @Override
     public int getXPReward() {
-        return MID_XP_REWARD; // Uses the constant from Unit class
+        return MID_XP_REWARD;
     }
 }

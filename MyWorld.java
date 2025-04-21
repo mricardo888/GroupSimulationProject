@@ -1,5 +1,4 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
-import java.util.Random;
+import greenfoot.*;
 import java.util.ArrayList;
 
 /**
@@ -7,6 +6,8 @@ import java.util.ArrayList;
  * Updated to make special skills spawn in the middle and not damage towers.
  * Added sound support for background music and death sounds.
  * Added unit limit per side.
+ * 
+ * @author Ricardo Lee
  */
 public class MyWorld extends World
 {
@@ -82,7 +83,6 @@ public class MyWorld extends World
     private Label unitCountLabel1; // Added label to display unit count
     private Label unitCountLabel2; // Added label to display unit count
 
-    
     // Tower references
     private Tower tower1;
     private Tower tower2;
@@ -98,7 +98,8 @@ public class MyWorld extends World
     private boolean first;
     
     /**
-     * Constructor for the game world.
+     * Constructor for the game world. Creates a new world with a 1024x800 cell size, initializes gold and XP from Settings,
+     * sets up UI elements, towers, special skills, and spawns initial units. Also sets up background music.
      */
     public MyWorld() {
         // Create a new world with 1024x800 cells with a cell size of 1x1 pixels.
@@ -237,7 +238,7 @@ public class MyWorld extends World
         
         // Create an initial transparent image for special skills
         GreenfootImage transparentImage = new GreenfootImage(1, 1);
-        transparentImage.setTransparency(0); // Make it fully transparent
+        transparentImage.setTransparency(0);
         
         // Set the transparent image to each skill
         meteor.setImage(transparentImage);
@@ -246,7 +247,6 @@ public class MyWorld extends World
         laserBeam.setImage(transparentImage);
         
         // Add special skills to the world (initially invisible)
-        // Place them at -100, -100 (offscreen) instead of 0, 0
         addObject(meteor, -100, -100);
         addObject(rainingArrows, -100, -100);
         addObject(planeBomb, -100, -100);
@@ -254,7 +254,9 @@ public class MyWorld extends World
     }
     
     /**
-     * The main game loop.
+     * The main game loop. Updates displays, checks age advancement, 
+     * handles unit spawning based on timers,
+     * generates gold over time, and checks skill message status.
      */
     public void act() {
         // Skip if game has ended
@@ -347,9 +349,6 @@ public class MyWorld extends World
         return 0; // Don't use any skill this time
     }
     
-    /**
-     * Count the number of units for a specific side
-     */
     private int countUnits(int side) {
         int count = 0;
         for (Unit unit : getObjects(Unit.class)) {
@@ -361,70 +360,44 @@ public class MyWorld extends World
         return count;
     }
 
-    /**
-     * Configure and activate the Meteor skill
-     */
     private void configureMeteor(int side, int targetX, int targetY) {
-        // Configure meteor to target the middle of the screen
         meteor.setMeteorCount(8);
         meteor.setSpawnRate(20);
         meteor.setSizeRange(20, 50);
         meteor.setSpeedRange(3, 6);
-        meteor.setOwnerSide(side); // Set which side is using the skill
-        
-        // Target the middle area of the screen
+        meteor.setOwnerSide(side);
         int middleX = getWidth() / 2;
-        int targetWidth = getWidth() / 3; // 1/3 of screen width
-        
+        int targetWidth = getWidth() / 3;
         meteor.setTargetArea(middleX, targetWidth);
         meteor.start();
     }
     
-    /**
-     * Configure and activate the LaserBeam skill
-     */
     private void configureLaserBeam(int side, int targetX, int targetY) {
-        // Configure laser beam to fire from top of the screen, straight down
-        // Use the middle of the screen for X position
-        int startX = getWidth() / 2; // Middle of screen
-        int startY = 0; // Top of the screen
-        
-        laserBeam.setShots(8); // Increased shot count for better coverage
+        int startX = getWidth() / 2;
+        int startY = 0;
+        laserBeam.setShots(8);
         laserBeam.setOwnerSide(side);
         laserBeam.start();
     }
     
-    /**
-     * Configure and activate the RainingArrows skill
-     */
     private void configureRainingArrows(int side, int targetX, int targetY) {
-        // Configure raining arrows to target the middle of the screen
-        rainingArrows.setCoverage(40); // 40% coverage
+        rainingArrows.setCoverage(40);
         rainingArrows.setDuration(150);
         rainingArrows.setDensity(3);
         rainingArrows.setOwnerSide(side);
-        
-        // Target the middle area
         int middleX = getWidth() / 2;
-        int targetWidth = getWidth() / 3; // 1/3 of screen width
-        
+        int targetWidth = getWidth() / 3;
         rainingArrows.setTargetArea(middleX, targetWidth);
         rainingArrows.start();
     }
-    
-    /**
-     * Configure and activate the PlaneBomb skill
-     */
+
     private void configurePlaneBomb(int side, int targetX, int targetY) {
-        // Configure plane to fly across the entire screen
         int direction;
         
         if (side == 1) {
-            // Side 1 plane flies left to right
-            direction = 1; // Left to right
+            direction = 1;
         } else {
-            // Side 2 plane flies right to left
-            direction = -1; // Right to left
+            direction = -1;
         }
         
         planeBomb.setDirection(direction);
@@ -432,17 +405,10 @@ public class MyWorld extends World
         planeBomb.start();
     }
     
-    /**
-     * Use the selected skill from the specified side.
-     * @param side The side using the skill (1 or 2)
-     * @param skillType 1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam
-     */
     private void useSkill(int side, int skillType) {
-        // All skills now target the middle of the screen
         int targetX = getWidth() / 2;
         int targetY = getHeight() / 2;
         
-        // Skills are now free - remove gold deduction
         switch (skillType) {
             case 4: // LaserBeam
                 if (!laserBeam.isActive()) {
@@ -467,11 +433,7 @@ public class MyWorld extends World
         }
     }
     
-    /**
-     * Spawn initial units for both sides.
-     */
     private void spawnInitialUnits() {
-        // Spawn one unit on each side to start with correct directions
         spawnUnit(1, 1);  // side 1 (left to right)
         spawnUnit(2, -1); // side 2 (right to left)
     }
@@ -503,7 +465,7 @@ public class MyWorld extends World
      */
     private void checkAgeAdvancement() {
         // Side 1 age advancement
-        if (age1 < 4) { // Max age is 4
+        if (age1 < 4) {
             int nextAgeThreshold = getNextAgeThreshold(age1);
             if (xp1 >= nextAgeThreshold) {
                 advanceAge(1);
@@ -511,7 +473,7 @@ public class MyWorld extends World
         }
         
         // Side 2 age advancement
-        if (age2 < 4) { // Max age is 4
+        if (age2 < 4) {
             int nextAgeThreshold = getNextAgeThreshold(age2);
             if (xp2 >= nextAgeThreshold) {
                 advanceAge(2);
@@ -519,18 +481,15 @@ public class MyWorld extends World
         }
     }
     
-    /**
-     * Advance a player's age
-     */
     private void advanceAge(int side) {
         if (side == 1) {
-            age1 = Math.min(age1 + 1, 4); // Side 1's age (capped at 4)
+            age1 = Math.min(age1 + 1, 4);
             ageLabel1.setValue("Age: " + getAgeDescription(1));
-            tower1.updateAge(age1); // Update tower's age and appearance
+            tower1.updateAge(age1);
         } else {
-            age2 = Math.min(age2 + 1, 4); // Side 2's age (capped at 4)
+            age2 = Math.min(age2 + 1, 4);
             ageLabel2.setValue("Age: " + getAgeDescription(2));
-            tower2.updateAge(age2); // Update tower's age and appearance
+            tower2.updateAge(age2);
         }
     }
     
@@ -545,12 +504,10 @@ public class MyWorld extends World
         }
     }
     
-    // Method to reset kill threshold for side 1
     private void resetKillThreshold1() {
         killThreshold1 = 5 + Greenfoot.getRandomNumber(6); // 5 to 10
     }
     
-    // Method to reset kill threshold for side 2
     private void resetKillThreshold2() {
         killThreshold2 = 5 + Greenfoot.getRandomNumber(6); // 5 to 10
     }
@@ -572,7 +529,10 @@ public class MyWorld extends World
         }
     }
     
-    // Method to track kills and potentially activate special skills
+    /**
+     * Tracks kills for the specified side and potentially activates special skills when the kill threshold is reached.
+     * Updates kill counter displays and resets the counter when a special skill is activated.
+     */
     public void recordKill(int killerSide) {
         if (killerSide == 1) {
             killCount1++;
@@ -629,12 +589,11 @@ public class MyWorld extends World
         }
     }
 
-    
-    
     /**
-     * Check if a particular skill is currently active
-     * @param skillType 1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam
-     * @return true if the skill is active
+     * Checks if a particular skill is currently active. 
+     * Takes a skill type parameter
+     * (1 for Meteor, 2 for RainingArrows, 3 for PlaneBomb, 4 for LaserBeam) 
+     * and returns true if the skill is active.
      */
     public boolean isSkillActive(int skillType) {
         switch (skillType) {
@@ -651,31 +610,15 @@ public class MyWorld extends World
         }
     }
 
-    
     // Method to activate an appropriate skill based on the side's age
     private void activateAgeBasedSkill(int side) {
         int age = (side == 1) ? age1 : age2;
-        
-        // Choose skill based on age
-        int skillType;
-        if (age >= 4) {
-            // In Space Age, use LaserBeam (most powerful)
-            skillType = 4;
-        } else if (age >= 3) {
-            // In Modern Age, use PlaneBomb
-            skillType = 3;
-        } else if (age >= 2) {
-            // In Cave Age, use RainingArrows
-            skillType = 2;
-        } else {
-            // In Stone Age, use Meteor (least powerful)
-            skillType = 1;
-        }
-        
-        // Activate the chosen skill
-        useSkill(side, skillType);
+        useSkill(side, age);
     }
     
+    /**
+     * Returns the current age of the specified player side (1 or 2).
+     */
     public int getPlayerAge(int side) {
         return (side == 1) ? age1 : age2;
     }
@@ -692,25 +635,20 @@ public class MyWorld extends World
     private void side1() {
         int unitCount = countUnits(1);
         
-        // Only spawn if below the unit limit
         if (unitCount >= MAX_UNITS_PER_SIDE) {
-            return; // Skip spawning if at or above the limit
+            return;
         }
         
-        // Focus on spawning units
-        // If we have enough gold for a High unit, occasionally spawn one
         if (gold1 >= HIGH_COST + (30 * age1) && Greenfoot.getRandomNumber(100) < 20) {
             spawnUnitBySide(1, 3); // High unit
             return;
         }
         
-        // If we have enough gold for a Mid unit, spawn one with moderate chance
         if (gold1 >= MID_COST + (30 * age1) && Greenfoot.getRandomNumber(100) < 35) {
             spawnUnitBySide(1, 2); // Mid unit
             return;
         }
         
-        // Otherwise, spawn low units whenever possible
         if (gold1 >= LOW_COST + (30 * age1)) {
             spawnUnitBySide(1, 1); // Low unit
             unitsSpawnedSide1++;
@@ -720,39 +658,33 @@ public class MyWorld extends World
     private void side2() {
         int unitCount = countUnits(2);
         
-        // Only spawn if below the unit limit
         if (unitCount >= MAX_UNITS_PER_SIDE) {
-            return; // Skip spawning if at or above the limit
+            return; 
         }
         
-        // Focus on spawning units
-        // If we have enough gold for a High unit, occasionally spawn one
         if (gold2 >= HIGH_COST + (30 * age2) && Greenfoot.getRandomNumber(100) < 20) {
-            spawnUnitBySide(2, 3); // High unit
+            spawnUnitBySide(2, 3);
             return;
         }
         
-        // If we have enough gold for a Mid unit, spawn one with moderate chance
         if (gold2 >= MID_COST + (30 * age2) && Greenfoot.getRandomNumber(100) < 35) {
-            spawnUnitBySide(2, 2); // Mid unit
+            spawnUnitBySide(2, 2);
             return;
         }
         
-        // Otherwise, spawn low units whenever possible
         if (gold2 >= LOW_COST + (30 * age2)) {
-            spawnUnitBySide(2, 1); // Low unit
+            spawnUnitBySide(2, 1);
             unitsSpawnedSide2++;
         }
     }
-
 
     private int decideUnitToSpawn(int gold, int age, int unitCount) {
         int highCost = HIGH_COST + (30 * age);
         int midCost = MID_COST + (30 * age);
         
         // As unit count increases, so does chance of higher tier units
-        int highUnitChance = Math.min(30 + (unitCount / 2), 70); // Up to 70% chance
-        int midUnitChance = Math.min(50 + (unitCount / 3), 80);  // Up to 80% chance
+        int highUnitChance = Math.min(30 + (unitCount / 2), 70);
+        int midUnitChance = Math.min(50 + (unitCount / 3), 80);
         
         if (gold >= highCost && Greenfoot.getRandomNumber(100) < highUnitChance) {
             return 3; // High unit
@@ -835,9 +767,8 @@ public class MyWorld extends World
     }
     
     /**
-     * Called when a tower is destroyed to end the game
-     * 
-     * @param losingSide The side whose tower was destroyed
+     * Called when a tower is destroyed to end the game. Creates a fade-out effect, displays game over messages 
+     * showing which player won, and transitions to the finish screen after a delay.
      */
     public void gameOver(int losingSide) {
         if (gameEnded) return; // Prevent multiple calls

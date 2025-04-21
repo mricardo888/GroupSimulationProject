@@ -7,24 +7,23 @@ import java.util.List;
  * and dropping bombs that explode on impact with the ground.
  * Modified to only target units (not towers) and spawn in the middle area.
  * 
- * @author Your Name
- * @version 1.0
+ * @author Ricardo Lee
  */
 public class PlaneBomb extends SpecialSkill
 {
     private Animator animator;
     private int planeSpeed = 3;
-    private int bombDropRate = 30; // Drop a bomb every 60 acts
+    private int bombDropRate = 30;
     private int bombTimer = 0;
     private int planeX, planeY;
     private ArrayList<Bomb> bombs = new ArrayList<Bomb>();
     private ArrayList<Explosion> explosions = new ArrayList<Explosion>();
-    private int ownerSide = 0; // Side that activated the skill
-    private int bombDamage = 200; // Damage per bomb hit
-    private int targetDirection = 1; // 1 = left to right, -1 = right to left
+    private int ownerSide = 0;
+    private int bombDamage = 200;
+    private int targetDirection = 1;
     
     /**
-     * Constructor for the PlaneBomb skill
+     * Constructor for the PlaneBomb skill. Initializes the plane animator.
      */
     public PlaneBomb() {
         animator = new Animator("images/plane");
@@ -32,37 +31,33 @@ public class PlaneBomb extends SpecialSkill
     }
     
     /**
-     * Set the side that activated this skill
+     * Sets the side that activated this skill
      */
     public void setOwnerSide(int side) {
         this.ownerSide = side;
     }
     
     /**
-     * Set the direction of the plane
-     * @param direction 1 for left to right, -1 for right to left
+     * Direction 1 for left to right, -1 for right to left
      */
     public void setDirection(int direction) {
         this.targetDirection = direction;
     }
     
     /**
-     * Start the plane bombing sequence
+     * Starts the plane bombing
      */
     public void start() {
         World world = getWorld();
         if (world != null && !active) {
-            // Initialize plane position based on direction, starting from the edge of the screen
             if (targetDirection > 0) {
-                // Left to right, start at the left edge of screen
                 planeX = 0;
-                setRotation(0); // Make sure plane is facing right
+                setRotation(0);
             } else {
-                // Right to left, start at the right edge of screen
                 planeX = world.getWidth();
-                setRotation(180); // Flip the plane to face left
+                setRotation(180);
             }
-            planeY = 100; // Fly higher up for better visibility
+            planeY = 100;
             active = true;
             bombs.clear();
             explosions.clear();
@@ -70,7 +65,7 @@ public class PlaneBomb extends SpecialSkill
     }
     
     /**
-     * Act method called by Greenfoot
+     * Updates plane position, drops bombs in the middle area
      */
     public void act()
     {
@@ -116,9 +111,6 @@ public class PlaneBomb extends SpecialSkill
         updateExplosions(world);
     }
     
-    /**
-     * Drop a bomb from the plane
-     */
     private void dropBomb(World world) {
         Bomb bomb = new Bomb(planeX, planeY + 30);
         bombs.add(bomb);
@@ -128,9 +120,6 @@ public class PlaneBomb extends SpecialSkill
         bombDrop.play();
     }
     
-    /**
-     * Update all active bombs
-     */
     private void updateBombs(World world) {
         ArrayList<Bomb> bombsToRemove = new ArrayList<Bomb>();
         
@@ -184,9 +173,6 @@ public class PlaneBomb extends SpecialSkill
         bombs.removeAll(bombsToRemove);
     }
     
-    /**
-     * Damage units within the explosion radius
-     */
     private void damageUnitsInArea(World world, int x, int y, int radius) {
         // Get all units in the world
         java.util.List<Unit> units = world.getObjects(Unit.class);
@@ -206,9 +192,6 @@ public class PlaneBomb extends SpecialSkill
         }
     }
     
-    /**
-     * Update all active explosions
-     */
     private void updateExplosions(World world) {
         ArrayList<Explosion> explosionsToRemove = new ArrayList<Explosion>();
         

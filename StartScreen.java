@@ -1,15 +1,16 @@
-import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
+import greenfoot.*;
 
 /**
- * Write a description of class StartScreen here.
+ * The start screen of the game
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Mark Huang
  */
 public class StartScreen extends World
 {
 
-    
+    /**
+     * Constructor for the StartScreen
+     */
     public StartScreen()
     {    
         // Create a new world with 600x400 cells with a cell size of 1x1 pixels.
@@ -41,14 +42,5 @@ public class StartScreen extends World
         GreenfootImage title = new GreenfootImage("title.png");
         title.scale((int)(title.getWidth() * 0.3), (int)(title.getHeight() * 0.3));
         getBackground().drawImage(title,getWidth()/2-230,150);
-
-        
-        
-    }
-    
-    
-    
-    public void act(){
-        
     }
 }

@@ -4,35 +4,35 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 
 /**
- * RainingArrows is a special skill that creates a barrage of arrows falling from the sky.
- * The arrows can damage enemies and create impact effects when hitting the ground.
- * Modified to spawn in the middle area and not damage towers.
+ * RainingArrows creates arrows falling from the sky
+ * The arrows can damage enemies and create impact effects 
+ * when hitting the ground but not towers
+ * 
+ * @author Ricardo Lee
  */
 public class RainingArrows extends SpecialSkill
 {
     private ArrayList<Arrow> arrows = new ArrayList<Arrow>();
     private ArrayList<ArrowImpact> impacts = new ArrayList<ArrowImpact>();
-    private int spawnRate = 5; // Time between arrow spawns (lower = more frequent)
+    private int spawnRate = 5;
     private int spawnTimer = 0;
-    private int arrowsRemaining = 50; // Default number of arrows to spawn
-    private int arrowSpeed = 6; // Falling speed
-    private int coverage = 80; // Percentage of screen width covered by arrows
-    private int duration = 150; // Duration of the effect in acts
+    private int arrowsRemaining = 50;
+    private int arrowSpeed = 6;
+    private int coverage = 80;
+    private int duration = 150;
     private int timer = 0;
-    private int ownerSide = 0; // Side that activated the skill
-    private int arrowDamage = 75; // Damage per arrow hit
+    private int ownerSide = 0;
+    private int arrowDamage = 75;
     private int targetX;
     private int targetWidth;
     
     /**
-     * Constructor for the RainingArrows skill
+     * For creating the instance
      */
-    public RainingArrows() {
-        // Initialize any needed resources
-    }
+    public RainingArrows() {}
     
     /**
-     * Start the raining arrows effect
+     * Starts the raining arrows effect
      */
     public void start() {
         World world = getWorld();
@@ -45,16 +45,14 @@ public class RainingArrows extends SpecialSkill
     }
     
     /**
-     * Set the side that activated this skill
+     * Sets the side that activated this skill (1 or 2)
      */
     public void setOwnerSide(int side) {
         this.ownerSide = side;
     }
     
     /**
-     * Set the target area for the arrows
-     * @param x The center x-coordinate of the target area
-     * @param width The width of the target area
+     * Sets the target area
      */
     public void setTargetArea(int x, int width) {
         this.targetX = x;
@@ -62,36 +60,36 @@ public class RainingArrows extends SpecialSkill
     }
     
     /**
-     * Set the density of arrows (how many arrows spawn per act)
-     * Lower values = more arrows
+     * Sets the density of arrows
+     * Lower values = more arrows.
      */
     public void setDensity(int rate) {
         this.spawnRate = rate;
     }
     
     /**
-     * Set the duration of the raining arrows effect in acts
+     * Sets the duration of the raining arrows effect
      */
     public void setDuration(int duration) {
         this.duration = duration;
     }
     
     /**
-     * Set the percentage of screen width to be covered by arrows
+     * Sets the percentage of screen width to be covered by arrows
      */
     public void setCoverage(int percentage) {
         this.coverage = Math.min(100, Math.max(10, percentage)); // Clamp between 10-100%
     }
     
     /**
-     * Set the speed of falling arrows
+     * Sets the speed of falling arrows
      */
     public void setArrowSpeed(int speed) {
         this.arrowSpeed = speed;
     }
     
     /**
-     * Act method called by Greenfoot
+     * Spawn new arrows if effect still active
      */
     public void act()
     {
@@ -115,41 +113,31 @@ public class RainingArrows extends SpecialSkill
             }
         }
         
-        // Always update arrows and impacts, even if the rain has stopped
         try {
             updateArrows(world);
         } catch (ConcurrentModificationException e) {
-            // If we get a concurrent modification exception, try again next frame
+            // try again next frame
             System.out.println("Caught ConcurrentModificationException in updateArrows");
         }
         
         try {
             updateImpacts(world);
         } catch (ConcurrentModificationException e) {
-            // If we get a concurrent modification exception, try again next frame
+            // try again next frame
             System.out.println("Caught ConcurrentModificationException in updateImpacts");
         }
     }
     
-    /**
-     * Spawn a new arrow
-     */
     private void spawnArrow(World world) {
-        // Calculate spawn position - always in the middle area
         int worldWidth = world.getWidth();
         int middleX = worldWidth / 2;
-        int middleWidth = worldWidth / 3; // 1/3 of the screen width for middle area
-        
-        // Calculate bounds for the middle area
+        int middleWidth = worldWidth / 3; 
         int startX = middleX - middleWidth / 2;
         int endX = middleX + middleWidth / 2;
         
-        // Random X position within the middle area
         int x = Greenfoot.getRandomNumber(endX - startX) + startX;
-        int y = 0; // Start at the top
-        
-        // Randomize slight angle variations
-        int angle = 80 + Greenfoot.getRandomNumber(21); // 80-100 degrees
+        int y = 0; 
+        int angle = 80 + Greenfoot.getRandomNumber(21);
         
         // Create the arrow
         Arrow arrow = new Arrow(x, y, angle, arrowSpeed);
@@ -157,9 +145,6 @@ public class RainingArrows extends SpecialSkill
         world.addObject(arrow, arrow.getX(), arrow.getY());
     }
     
-    /**
-     * Update all active arrows
-     */
     private void updateArrows(World world) {
         // Create a copy of the arrows list to avoid ConcurrentModificationException
         ArrayList<Arrow> arrowsCopy = new ArrayList<Arrow>(arrows);
@@ -223,9 +208,6 @@ public class RainingArrows extends SpecialSkill
         arrows.removeAll(arrowsToRemove);
     }
     
-    /**
-     * Update all active impacts
-     */
     private void updateImpacts(World world) {
         // Create a copy of the impacts list to avoid ConcurrentModificationException
         ArrayList<ArrowImpact> impactsCopy = new ArrayList<ArrowImpact>(impacts);

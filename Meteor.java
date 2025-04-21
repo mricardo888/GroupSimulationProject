@@ -4,9 +4,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A Meteor class that creates meteors falling from the sky.
- * The meteors can vary in size, speed, and can create explosions on impact with the ground.
- * Modified to spawn in the middle area and not damage towers.
+ * A Meteor class that creates meteors falling from the sky
+ * 
+ * @author Ricardo Lee
  */
 public class Meteor extends SpecialSkill
 {
@@ -25,14 +25,12 @@ public class Meteor extends SpecialSkill
     private int targetWidth;
     
     /**
-     * Constructor for the Meteor skill
+     * For creating the instance
      */
-    public Meteor() {
-        // Initialize any needed resources
-    }
+    public Meteor() {}
     
     /**
-     * Start spawning meteors
+     * Starts spawning meteors
      */
     public void start() {
         World world = getWorld();
@@ -45,16 +43,14 @@ public class Meteor extends SpecialSkill
     }
     
     /**
-     * Set the side that activated this skill
+     * Sets the side that activated this skill (1 or 2)
      */
     public void setOwnerSide(int side) {
         this.ownerSide = side;
     }
     
     /**
-     * Set the target area for the meteors
-     * @param x The center x-coordinate of the target area
-     * @param width The width of the target area
+     * Sets the target area
      */
     public void setTargetArea(int x, int width) {
         this.targetX = x;
@@ -62,21 +58,21 @@ public class Meteor extends SpecialSkill
     }
     
     /**
-     * Set the number of meteors to spawn
+     * Sets the number of meteors to spawn
      */
     public void setMeteorCount(int count) {
         this.meteorsRemaining = count;
     }
     
     /**
-     * Set the spawn rate (higher = slower spawn)
+     * Sets the spawn rate of meteors
      */
     public void setSpawnRate(int rate) {
         this.spawnRate = rate;
     }
     
     /**
-     * Set the size range of meteors
+     * Sets the size range of meteors
      */
     public void setSizeRange(int min, int max) {
         this.minSize = min;
@@ -84,7 +80,7 @@ public class Meteor extends SpecialSkill
     }
     
     /**
-     * Set the speed range of meteors
+     * Sets the speed range of meteors
      */
     public void setSpeedRange(int min, int max) {
         this.minSpeed = min;
@@ -92,7 +88,8 @@ public class Meteor extends SpecialSkill
     }
     
     /**
-     * Act method called by Greenfoot
+     * Spawns new meteors if the effect is active
+     * Deactivates when all meteors have been spawned.
      */
     public void act()
     {
@@ -114,40 +111,28 @@ public class Meteor extends SpecialSkill
             }
         }
         
-        // Always update meteors and impacts, even if no new meteors are spawning
         updateMeteors(world);
         updateImpacts(world);
     }
     
-    /**
-     * Spawn a new meteor
-     */
     private void spawnMeteor(World world) {
         // Randomize meteor properties
         int size = Greenfoot.getRandomNumber(maxSize - minSize + 1) + minSize;
         int speed = Greenfoot.getRandomNumber(maxSpeed - minSpeed + 1) + minSpeed;
         
-        // Always spawn in the middle area of the screen
         int middleX = world.getWidth() / 2;
-        int spawnWidth = world.getWidth() / 3; // Use 1/3 of the screen width centered in the middle
-        
-        // Random X position within the middle area
+        int spawnWidth = world.getWidth() / 3; 
         int minX = middleX - spawnWidth / 2;
         int maxX = middleX + spawnWidth / 2;
         int x = minX + Greenfoot.getRandomNumber(maxX - minX);
-        
-        int y = 0; // Start at the top
-        
+        int y = 0; 
         // Create the meteor
         MeteorObject meteor = new MeteorObject(x, y, size, speed);
-        meteor.setSide(ownerSide); // Set the side of the meteor to match the owner
+        meteor.setSide(ownerSide);
         meteors.add(meteor);
         world.addObject(meteor, meteor.getX(), meteor.getY());
     }
     
-    /**
-     * Update all active meteors
-     */
     private void updateMeteors(World world) {
         ArrayList<MeteorObject> meteorsToRemove = new ArrayList<MeteorObject>();
         
@@ -155,7 +140,6 @@ public class Meteor extends SpecialSkill
         for (Iterator<MeteorObject> iterator = meteors.iterator(); iterator.hasNext();) {
             MeteorObject meteor = iterator.next();
             
-            // Check if meteor still exists in the world
             if (meteor.getWorld() == null) {
                 meteorsToRemove.add(meteor);
                 continue;
@@ -163,7 +147,6 @@ public class Meteor extends SpecialSkill
             
             meteor.update();
             
-            // Get current location for accurate collision check
             int currentX = meteor.getX();
             int currentY = meteor.getY();
             
@@ -208,9 +191,6 @@ public class Meteor extends SpecialSkill
         meteors.removeAll(meteorsToRemove);
     }
     
-    /**
-     * Update all active impacts
-     */
     private void updateImpacts(World world) {
         ArrayList<MeteorImpact> impactsToRemove = new ArrayList<MeteorImpact>();
         
@@ -235,9 +215,6 @@ public class Meteor extends SpecialSkill
         impacts.removeAll(impactsToRemove);
     }
     
-    /**
-     * Damage units within the impact radius
-     */
     private void damageUnitsInArea(World world, int x, int y, int radius) {
         // Get all units in the world
         java.util.List<Unit> units = world.getObjects(Unit.class);

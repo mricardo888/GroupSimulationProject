@@ -3,8 +3,9 @@ import java.util.ArrayList;
 import java.io.File;
 
 /**
- * The base class for all units in the game.
- * Modified to prevent special skills from contributing to kill count.
+ * The abstract class for all units
+ * 
+ * @author Ricardo Lee
  */
 public abstract class Unit extends SuperSmoothMover
 {
@@ -19,7 +20,7 @@ public abstract class Unit extends SuperSmoothMover
     protected Animator walkAnimation;
     protected Animator attackAnimation;
     protected Animator deathAnimation;
-    protected double speed = 1; // Default speed is one
+    protected double speed = 1; // Default speed
     protected int attackDamage = 10; // Default attack damage
     protected int attackCooldown = 0; // Cooldown between attacks
     protected int attackRange = 50; // Default attack range
@@ -28,16 +29,19 @@ public abstract class Unit extends SuperSmoothMover
     private boolean hasDealtDamageThisCycle = false; // Flag to track if damage was dealt in current animation cycle
     protected boolean killedBySpecialSkill = false; // Flag to track if unit was killed by special skill
     
-    // XP rewards constants - these match the MyWorld constants
+    // XP rewards constants
     public static final int LOW_XP_REWARD = 10;
     public static final int MID_XP_REWARD = 25;
     public static final int HIGH_XP_REWARD = 50;
     
-    // Gold rewards constants - base values that will be multiplied by age
+    // Gold rewards base values
     public static final int LOW_GOLD_REWARD = 15;
     public static final int MID_GOLD_REWARD = 35;
     public static final int HIGH_GOLD_REWARD = 65;
     
+    /**
+     * Constructor for the Unit class
+     */
     public Unit(int age, int hp, int direction, String type) {
         this.age = age;
         this.hp = hp;
@@ -63,24 +67,29 @@ public abstract class Unit extends SuperSmoothMover
                 deathAnimation.flip();
             }
         }
-        
+        this.attackDamage = 25;
         // Initialize death sound
         deathSound = new GreenfootSound("./sounds/oof.mp3");
-        
-        // Increase base damage by 2.5x to make the game faster
-        this.attackDamage = 25; // Increased from default 10
     }
     
+    /**
+     * Creates and adds HP bar
+     */
     public void addedToWorld(World world) {
-        // Create and add HP bar when the unit is added to the world
         hpBar = new HPBar(this, maxHP);
         world.addObject(hpBar, getX(), getY() - 30);
     }
     
+    /**
+     * Changes the speed
+     */
     public void changeSpeed(double s) {
         speed = s;
     }
 
+    /**
+     * Checks if there is an enemy tower within the specified range
+     */
     public Tower enemyTowerInRange(int r) {
         java.util.List<Tower> towers = getObjectsInRange(r, Tower.class);
         for (Tower t : towers) {
@@ -92,13 +101,15 @@ public abstract class Unit extends SuperSmoothMover
     }
     
     /**
-     * Check if this unit is currently attacking
-     * @return true if the unit is in attack mode
+     * Checks if this unit is attacking
      */
     public boolean isAttacking() {
         return attacking;
     }
     
+    /**
+     * Checks for enemies to attack and manages attack cooldowns
+     */
     public void act()
     {
         if (hp <= 0) {
@@ -122,7 +133,6 @@ public abstract class Unit extends SuperSmoothMover
             return;
         }
         
-        // Look for enemies to attack (priority to units, then towers)
         if (!attacking) {
             Unit enemy = enemyInRange(attackRange);
             if (enemy != null) {
@@ -150,12 +160,14 @@ public abstract class Unit extends SuperSmoothMover
             }
         }
         
-        // Reduce attack cooldown if it's active
         if (attackCooldown > 0) {
             attackCooldown--;
         }
     }
 
+    /**
+     * Dealing damage to enemies or towers in range
+     */
     protected void performAttack() {
         // Get the current attack frame without flipping it again
         setImage(attackAnimation.getCurrentFrame());
@@ -166,16 +178,14 @@ public abstract class Unit extends SuperSmoothMover
             hasDealtDamageThisCycle = false;
         }
         
-        // If we are at the attack frame (middle of animation) and haven't dealt damage yet this cycle
-        // For simplicity, we'll say the attack frame is in the middle of the animation
         int attackFrame = attackAnimation.getSize() / 2;
         if (attackAnimation.getImageIndex() == attackFrame && !hasDealtDamageThisCycle && attackCooldown == 0) {
             // First check for enemy units
             Unit enemy = enemyInRange(attackRange);
             if (enemy != null) {
                 enemy.attack(attackDamage);
-                attackCooldown = 10; // Shorter cooldown so we can attack more frequently
-                hasDealtDamageThisCycle = true; // Mark that we've dealt damage in this cycle
+                attackCooldown = 10;
+                hasDealtDamageThisCycle = true; 
             } else {
                 // If no enemy units, check for enemy tower
                 Tower enemyTower = enemyTowerInRange(attackRange);
@@ -192,6 +202,9 @@ public abstract class Unit extends SuperSmoothMover
         }
     }
     
+    /**
+     * Handles death animation sequence and awards rewards
+     */
     protected void death() {
         // Play death sound at the start of death animation
         if (deathAnimation.getImageIndex() == 0) {
@@ -200,53 +213,37 @@ public abstract class Unit extends SuperSmoothMover
         
         setImage(deathAnimation.getCurrentFrame());
         if (deathAnimation.getImageIndex() + 1 == deathAnimation.getSize()) {
-            // Award gold and XP to the opponent when a unit dies
             // Check if killed by special skill
             if (killedBySpecialSkill) {
-                awardRewardsWithoutKill(); // Don't increment kill counter for special skill kills
+                awardRewardsWithoutKill(); // Don't include in kill counter
             } else {
-                awardRewards(); // Normal kill counter incrementing
+                awardRewards(); // Normal kill counter
             }
             getWorld().removeObject(this);
         }
     }
     
     /**
-     * Award gold and XP rewards to the opponent
-     * This method also increments the kill counter
+     * Awards gold and XP rewards
      */
     protected void awardRewards() {
         if (getWorld() instanceof MyWorld) {
             MyWorld world = (MyWorld) getWorld();
             
-            // Award gold and XP to the opposite side based on direction
-            // Side 1 units have direction 1 (left to right)
-            // Side 2 units have direction -1 (right to left)
-            if (direction == 1) { // If side 1 unit died, award to side 2
-                // Calculate gold reward based on unit type and scale by unit's age
+            if (direction == 1) {
                 int goldReward = getCost() * 2;
                 world.addGold(2, goldReward);
                 
-                // Calculate XP based on:
-                // 1. Base XP determined by unit type (Low, Mid, High)
-                // 2. Multiplied by the unit's age
-                // 3. Multiplied by the killer's age
                 int killerAge = world.getPlayerAge(2);
                 int baseXP = getXPReward();
                 int totalXP = baseXP * age * killerAge;
                 
-                // Award the calculated XP
                 world.addXP(2, totalXP);
                 world.recordKill(2); // Record a kill for side 2
-            } else { // If side 2 unit died, award to side 1
-                // Calculate gold reward based on unit type and scale by unit's age
+            } else {
                 int goldReward = getCost() * 2;
                 world.addGold(1, goldReward);
                 
-                // Calculate XP based on:
-                // 1. Base XP determined by unit type (Low, Mid, High)
-                // 2. Multiplied by the unit's age
-                // 3. Multiplied by the killer's age
                 int killerAge = world.getPlayerAge(1);
                 int baseXP = getXPReward();
                 int totalXP = baseXP * age * killerAge;
@@ -259,106 +256,77 @@ public abstract class Unit extends SuperSmoothMover
     }
     
     /**
-     * Award gold and XP rewards to the opponent WITHOUT incrementing kill counter
-     * This is used for kills by special skills
+     * Awards gold and XP rewards to the opponent without kill counter
      */
     protected void awardRewardsWithoutKill() {
         if (getWorld() instanceof MyWorld) {
             MyWorld world = (MyWorld) getWorld();
-            
-            // Award gold and XP to the opposite side based on direction
-            // Side 1 units have direction 1 (left to right)
-            // Side 2 units have direction -1 (right to left)
-            if (direction == 1) { // If side 1 unit died, award to side 2
-                // Calculate gold reward based on unit type and scale by unit's age
+            if (direction == 1) {
                 int goldReward = getCost() * 2;
                 world.addGold(2, goldReward);
                 
-                // Calculate XP based on:
-                // 1. Base XP determined by unit type (Low, Mid, High)
-                // 2. Multiplied by the unit's age
-                // 3. Multiplied by the killer's age
                 int killerAge = world.getPlayerAge(2);
                 int baseXP = getXPReward();
                 int totalXP = baseXP * age * killerAge;
                 
-                // Award the calculated XP
                 world.addXP(2, totalXP);
-                // DO NOT record a kill - this is the key difference from awardRewards()
-            } else { // If side 2 unit died, award to side 1
-                // Calculate gold reward based on unit type and scale by unit's age
+            } else {
                 int goldReward = getCost() * 2;
                 world.addGold(1, goldReward);
                 
-                // Calculate XP based on:
-                // 1. Base XP determined by unit type (Low, Mid, High)
-                // 2. Multiplied by the unit's age
-                // 3. Multiplied by the killer's age
                 int killerAge = world.getPlayerAge(1);
                 int baseXP = getXPReward();
                 int totalXP = baseXP * age * killerAge;
                 
-                // Award the calculated XP
                 world.addXP(1, totalXP);
-                // DO NOT record a kill - this is the key difference from awardRewards()
             }
         }
     }
     
+    /**
+     * Damages the unit
+     */
     public void attack(int damage) {
         hp -= damage;
-        // Regular attacks, not flagged as special skill kill
         killedBySpecialSkill = false;
     }
     
+    /**
+     * Gets unit direction
+     */
     public int getDirection() {
         return direction;
     }
     
     /**
-     * Called when a unit is hit by a special skill
-     * 
-     * @param damage The amount of damage to inflict
-     * @param side The side that activated the skill (1 or 2)
+     * Applies damage if the special skill was activated by enemy
      */
     public void hitBySpecialSkill(int damage, int side) {
-        // Only take damage if the skill was activated by the opposing side
-        // Side 1 units have direction 1 (left to right)
-        // Side 2 units have direction -1 (right to left)
         int unitSide = (direction == 1) ? 1 : 2;
         
         if (unitSide != side) {
-            // Apply damage
             hp -= damage;
             
-            // Flag that this unit was killed by a special skill
             if (hp <= 0) {
                 killedBySpecialSkill = true;
                 
-                // Play death sound
                 deathSound.play();
-                
-                // No need to call awardRewardsWithoutKill() here
-                // The act() or death() methods will handle that using our killedBySpecialSkill flag
             }
         }
     }
 
+    /**
+     * Checks if there is a friendly unit too close ahead
+     */
     public Unit friendlyUnitAhead() {
-        int requiredSpacing = 50; // Increased to 50 pixels as requested
+        int requiredSpacing = 50; 
         
-        // Get all units within a search range in front of this unit
         ArrayList<Unit> units = new ArrayList<Unit>();
         for (Unit u : getWorld().getObjects(Unit.class)) {
-            // Only consider units in the same lane (similar Y coordinate)
             if (Math.abs(u.getY() - getY()) < 10) {
-                // Only consider units that belong to the same side (same direction)
                 if (u.getDirection() == this.direction && u != this) {
-                    // Check if the unit is ahead of current unit in the direction of movement
                     if ((direction == 1 && u.getX() > getX()) ||
                         (direction == -1 && u.getX() < getX())) {
-                        
-                        // Calculate distance between units
                         int distance = Math.abs(u.getX() - getX());
                         
                         // If unit is too close, add to the list
@@ -370,7 +338,6 @@ public abstract class Unit extends SuperSmoothMover
             }
         }
         
-        // Return the closest unit ahead if any are too close
         if (!units.isEmpty()) {
             Unit closest = units.get(0);
             int closestDistance = Math.abs(closest.getX() - getX());
@@ -389,16 +356,16 @@ public abstract class Unit extends SuperSmoothMover
         return null;
     }
     
-    /**
-     * Check if this unit is in the specified rectangular area
-     */
-    public boolean isInArea(int x1, int y1, int x2, int y2) {
+    protected boolean isInArea(int x1, int y1, int x2, int y2) {
         int unitX = getX();
         int unitY = getY();
         
         return unitX >= x1 && unitX <= x2 && unitY >= y1 && unitY <= y2;
     }
     
+    /**
+     * Gets unit side
+     */
     public int getSide() {
         if (direction == -1) {
             return 2;
@@ -407,6 +374,9 @@ public abstract class Unit extends SuperSmoothMover
         }
     }
     
+    /**
+     * Checks if there is an enemy unit within a certain area
+     */
     public Unit enemyInRange(int r) {
         ArrayList<Unit> enemies = (ArrayList<Unit>) getObjectsInRange(r, Unit.class);
         for (Unit u : enemies) {
@@ -417,23 +387,33 @@ public abstract class Unit extends SuperSmoothMover
         return null;
     }
     
-    // Getter for HP for the HP bar
+    /**
+     * Gets hp
+     */
     public int getHP() {
         return hp;
     }
     
-    // Setter for attack damage
+    /**
+     * Sets unit attack damage
+     */
     public void setAttackDamage(int damage) {
         // Base damage is multiplied by age factor to scale with progress
         this.attackDamage = damage * 3 * age; // Tripled base values and multiplied by age
     }
 
-    // Getter for the unit cost
+    /**
+     * Gets unit cost
+     */
     public abstract int getCost();
     
-    // Get the gold reward for defeating this unit - should be overridden by subclasses
+    /**
+     * Gets kill gold reward
+     */
     public abstract int getGoldReward();
     
-    // Get the XP reward for defeating this unit - should be overridden by subclasses
+    /**
+     * Gets kill XP reward
+     */
     public abstract int getXPReward();
 }

@@ -4,17 +4,17 @@ import java.util.ConcurrentModificationException;
 import java.util.List;
 
 /**
- * LaserBeam is a special skill that shoots laser beams across the screen.
- * Modified to fire vertically downward like RainingArrows but with laser beams.
- * Only damages units (not towers) and targets the middle area of the screen.
+ * LaserBeam shoots laser beams across the screen
+ * 
+ * @author Ricardo Lee
  */
 public class LaserBeam extends SpecialSkill
 {
     private ArrayList<Beam> beams = new ArrayList<Beam>();
     private ArrayList<Impact> impacts = new ArrayList<Impact>();
-    private int spawnRate = 5; // Time between laser beam spawns (lower = more frequent)
+    private int spawnRate = 5;
     private int spawnTimer = 0;
-    private int beamsRemaining = 20; // Default number of beams to spawn
+    private int beamsRemaining = 20;
     private int beamSpeed = 10; // Falling speed
     private int duration = 120; // Duration of the effect in acts
     private int timer = 0;
@@ -22,7 +22,7 @@ public class LaserBeam extends SpecialSkill
     private int laserDamage = 250; // Damage per laser hit
     
     /**
-     * Constructor for the LaserBeam skill
+     * Initializes with a transparent image
      */
     public LaserBeam() {
         // Initialize with transparent image
@@ -32,14 +32,14 @@ public class LaserBeam extends SpecialSkill
     }
     
     /**
-     * Set the side that activated this skill
+     * Sets the side that activated this skill (1 or 2)
      */
     public void setOwnerSide(int side) {
         this.ownerSide = side;
     }
     
     /**
-     * Start shooting laser beams
+     * Starts shooting laser beams
      */
     public void start() {
         World world = getWorld();
@@ -52,7 +52,7 @@ public class LaserBeam extends SpecialSkill
     }
     
     /**
-     * Set the number of shots to fire
+     * Sets the number of shots to fire
      */
     public void setShots(int shots) {
         this.beamsRemaining = shots * 5; // Multiply to create more beams
@@ -60,7 +60,7 @@ public class LaserBeam extends SpecialSkill
     }
     
     /**
-     * Act method called by Greenfoot
+     * Manages beam and impact updates
      */
     public void act()
     {
@@ -84,7 +84,6 @@ public class LaserBeam extends SpecialSkill
             }
         }
         
-        // Always update beams and impacts, even if the laser has stopped firing
         try {
             updateBeams(world);
         } catch (ConcurrentModificationException e) {
@@ -100,40 +99,27 @@ public class LaserBeam extends SpecialSkill
         }
     }
     
-    /**
-     * Fire a laser beam from the top of the screen
-     */
     private void spawnBeam(World world) {
-        // Calculate spawn position in the middle area
         int worldWidth = world.getWidth();
         int middleX = worldWidth / 2;
-        int middleWidth = worldWidth / 3; // 1/3 of the screen width for middle area
-        
-        // Calculate bounds for the middle area
+        int middleWidth = worldWidth / 3; 
         int startX = middleX - middleWidth / 2;
         int endX = middleX + middleWidth / 2;
         
-        // Random X position within the middle area
         int x = Greenfoot.getRandomNumber(endX - startX) + startX;
-        int y = 0; // Start at the top
+        int y = 0;
         
-        // Create the beam - direction 90 means straight down
         Beam beam = new Beam(x, y);
         beams.add(beam);
         world.addObject(beam, x, y);
     }
     
-    /**
-     * Update all active beams
-     */
     private void updateBeams(World world) {
         // Create a copy of the beams list to avoid ConcurrentModificationException
         ArrayList<Beam> beamsCopy = new ArrayList<Beam>(beams);
         ArrayList<Beam> beamsToRemove = new ArrayList<Beam>();
         
-        // Iterate through the copy of the list
         for (Beam beam : beamsCopy) {
-            // Skip if beam is no longer in the world
             if (beam.getWorld() == null) {
                 beamsToRemove.add(beam);
                 continue;
@@ -141,7 +127,6 @@ public class LaserBeam extends SpecialSkill
             
             beam.update();
             
-            // Check if beam has hit a unit
             Unit hitUnit = beam.checkUnitHit();
             if (hitUnit != null) {
                 try {
@@ -185,9 +170,6 @@ public class LaserBeam extends SpecialSkill
         beams.removeAll(beamsToRemove);
     }
     
-    /**
-     * Update all active impacts
-     */
     private void updateImpacts(World world) {
         // Create a copy of the impacts list to avoid ConcurrentModificationException
         ArrayList<Impact> impactsCopy = new ArrayList<Impact>(impacts);
