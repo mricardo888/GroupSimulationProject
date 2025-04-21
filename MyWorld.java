@@ -22,7 +22,7 @@ public class MyWorld extends World
     private static final int HIGH_COST = 130;
     
     // Maximum number of units per side
-    private static final int MAX_UNITS_PER_SIDE = 8;
+    private static final int MAX_UNITS_PER_SIDE = 5;
     
     // Special skill costs (kept for reference but no longer used for deducting gold)
     private static final int METEOR_COST = 200;
