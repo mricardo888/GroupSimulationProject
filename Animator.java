@@ -3,7 +3,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 /**
- * Created and owned by Ricardo Lee
+ * @author Ricardo Lee
  */
 public class Animator
 {
