@@ -1,5 +1,9 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
-
+/**
+ * A setting page to change xp and gold values   
+ * 
+ * @author Mark Huang 
+ */
 
 public class Settings extends World
 {

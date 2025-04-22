@@ -1,10 +1,9 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * Write a description of class ForwardBut here.
+ * button that moves from world to world
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Mark Huang 
  */
 public class NextBut extends Buttons
 {

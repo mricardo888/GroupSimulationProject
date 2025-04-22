@@ -1,5 +1,9 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
-
+/**
+ * button to increase for both stats
+ * 
+ * @author Mark Huang 
+ */
 
 public class PlusBut extends Buttons
 {

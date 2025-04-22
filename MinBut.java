@@ -1,10 +1,9 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * Write a description of class MinBut here.
+ * button to reduce for both stats
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Mark Huang 
  */
 public class MinBut extends Buttons
 {
