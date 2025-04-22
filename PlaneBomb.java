@@ -106,6 +106,13 @@ public class PlaneBomb extends SpecialSkill
             }
         }
         
+        if (!active) {
+            // Create a transparent image
+            GreenfootImage transparentImage = new GreenfootImage(1, 1);
+            transparentImage.setTransparency(0);
+            setImage(transparentImage);
+        }
+        
         // Always update bombs and explosions, even if plane is no longer active
         updateBombs(world);
         updateExplosions(world);
