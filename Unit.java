@@ -231,7 +231,7 @@ public abstract class Unit extends SuperSmoothMover
             MyWorld world = (MyWorld) getWorld();
             
             if (direction == 1) {
-                int goldReward = getCost() * 2;
+                int goldReward = getCost();
                 world.addGold(2, goldReward);
                 
                 int killerAge = world.getPlayerAge(2);
@@ -241,7 +241,7 @@ public abstract class Unit extends SuperSmoothMover
                 world.addXP(2, totalXP);
                 world.recordKill(2); // Record a kill for side 2
             } else {
-                int goldReward = getCost() * 2;
+                int goldReward = getCost();
                 world.addGold(1, goldReward);
                 
                 int killerAge = world.getPlayerAge(1);
