@@ -1,10 +1,9 @@
 import greenfoot.*;  // (World, Actor, GreenfootImage, Greenfoot and MouseInfo)
 
 /**
- * Write a description of class Buttons here.
+ * Abstract base class for all buttons 
  * 
- * @author (your name) 
- * @version (a version number or a date)
+ * @author Mark Huang 
  */
 public abstract class Buttons extends Actor
 {
