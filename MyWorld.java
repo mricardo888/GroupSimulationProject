@@ -25,19 +25,13 @@ public class MyWorld extends World
     // Maximum number of units per side
     private static final int MAX_UNITS_PER_SIDE = 5;
     
-    // Special skill costs (kept for reference but no longer used for deducting gold)
-    private static final int METEOR_COST = 200;
-    private static final int RAINING_ARROWS_COST = 300;
-    private static final int PLANE_BOMB_COST = 400;
-    private static final int LASER_BEAM_COST = 500;
-    
     // # of spawned units
     private int unitsSpawnedSide1 = 0;
     private int unitsSpawnedSide2 = 0;
     private static final int UNITS_BEFORE_SKILLS = 25;
     
     // XP thresholds for advancing to next age
-    private static final int AGE_2_XP_THRESHOLD = 300;
+    private static final int AGE_2_XP_THRESHOLD = 250;
     private static final int AGE_3_XP_THRESHOLD = 1000;
     private static final int AGE_4_XP_THRESHOLD = 2000;
     private int unitCountThreshold = 25;
