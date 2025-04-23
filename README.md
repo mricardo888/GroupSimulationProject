@@ -122,7 +122,7 @@
 
 ### 🔧 UI & Icons
 - UI Buttons: [Shutterstock](https://www.shutterstock.com/image-vector/wooden-buttons-pixel-art-set-interface-2219921203)
-- XP & Coin Icons: Shutterstock
+- XP & Coin Icons: [Shutterstock](https://www.shutterstock.com/search/xp-icons)
 - Plus/Minus: [Shutterstock](https://www.shutterstock.com/image-vector/interface-buttons-pixel-art-set-menu-2157199881)
 - Start Screen BG: [Shutterstock](https://www.shutterstock.com/search/cielo-bits)
 - Settings BG: [Wallpapers.com](https://wallpapers.com/png/pixel-art-ancient-scroll-z3irksyc4batwp1c.html)
